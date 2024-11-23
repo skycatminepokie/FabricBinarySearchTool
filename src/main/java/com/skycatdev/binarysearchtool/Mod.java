@@ -11,10 +11,10 @@ import java.util.Set;
  */
 public record Mod(String id, Set<String> dependencies, String filename) {
     public boolean tryDisable(Path modFolder) {
-        return modFolder.resolve(filename + ".jar").toFile().renameTo(modFolder.resolve(filename + ".jar.DISABLED").toFile());
+        return modFolder.resolve(filename + ".jar").toFile().renameTo(modFolder.resolve(filename + ".jar.disabled").toFile());
     }
 
     public boolean tryEnable(Path modFolder) {
-        return modFolder.resolve(filename + ".jar.DISABLED").toFile().renameTo(modFolder.resolve(filename + ".jar").toFile());
+        return modFolder.resolve(filename + ".jar.disabled").toFile().renameTo(modFolder.resolve(filename + ".jar").toFile());
     }
 }
