@@ -19,6 +19,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -47,10 +48,26 @@ public class SearchGui extends JFrame {
     private JPanel mainPanel;
     private JTextField pathField;
     private @Nullable Path modsPath;
+    /**
+     * A list of all mods from the beginning
+     */
     private final ArrayList<Mod> mods = new ArrayList<>();
+    /**
+     * Mods that have been verified as working
+     */
     private final ArrayList<Mod> workingMods = new ArrayList<>();
+    /**
+     * Mods that may or may not be the problem
+     */
     private final ArrayList<Mod> candidateMods = new ArrayList<>();
+    /**
+     * Mods that we are checking for problems
+     */
     private final ArrayList<Mod> testingMods = new ArrayList<>();
+    /**
+     * Mods that are verified as working AND are dependencies of testingMods
+     */
+    private final ArrayList<Mod> testingDependencies = new ArrayList<>();
     private boolean searching = false;
 
     /**
@@ -189,15 +206,14 @@ public class SearchGui extends JFrame {
             }
         }
         searching = true;
-        bisect(true, 1);
+        bisect(true);
     }
 
     /**
      *
      * @param lastSuccessful If the last set was successful (error is gone)
-     * @param iteration The iteration of this step
      */
-    private void bisect(boolean lastSuccessful, int iteration) {
+    private void bisect(boolean lastSuccessful) {
         assert modsPath != null;
         if (lastSuccessful) {
             workingMods.addAll(testingMods);
@@ -212,13 +228,65 @@ public class SearchGui extends JFrame {
                 // TODO: Warning with instructions to fix
             }
         }
+        for (Mod dependencyMod : testingDependencies) {
+            if (!dependencyMod.tryDisable(modsPath)) {
+                // TODO: Warning with instructions to fix
+            }
+        }
         testingMods.clear();
+        testingDependencies.clear();
         // Ready for next step
 
-        // TODO: Choose mods to use
+        // Choose mods to use
+        candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
+        int previousSize = candidateMods.size();
+        while (testingMods.size() < previousSize / 2) {
+            // Add the mod to the testing set, remove it from the candidate set
+            Mod mod = candidateMods.removeFirst();
+            testingMods.add(mod);
 
+            // Add dependencies
+            for (String dependency : mod.dependencies()) {
+                // Check if we already have it
+                if (testingMods.stream().anyMatch((testMod) -> testMod.id().equals(dependency))) continue;
+                if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.id().equals(dependency))) continue;
+
+                // Check if it's a candidate
+                boolean found = false;
+                for (int i = 0; i < candidateMods.size(); i++) {
+                    if (candidateMods.get(i).id().equals(dependency)) {
+                        testingMods.add(candidateMods.remove(i));
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    for (Mod workingMod : workingMods) {
+                        if (workingMod.id().equals(dependency)) {
+                            testingDependencies.add(workingMod);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    if (mods.stream().anyMatch((mod1 -> mod1.id().equals(dependency)))) {
+                        // TODO: I did an oops, it should be in either testingMods, candidateMods, or working mods
+                    } else {
+                        // TODO: Missing dependency, you didn't need to binary search, silly.
+                    }
+                }
+            }
+        }
+
+        // Enable mods we're using
         for (Mod testingMod : testingMods) {
             if (!testingMod.tryEnable(modsPath)) {
+                // TODO: Warning with instructions to fix
+            }
+        }
+        for (Mod dependencyMod : testingDependencies) {
+            if (!dependencyMod.tryEnable(modsPath)) {
                 // TODO: Warning with instructions to fix
             }
         }
