@@ -245,6 +245,7 @@ public class SearchGui extends JFrame {
 
             // Add dependencies
             for (String dependency : mod.dependencies()) {
+                if (dependency.equals("minecraft") || dependency.equals("fabricloader") || dependency.equals("java")) continue;
                 // Check if we already have it
                 if (testingMods.stream().anyMatch((testMod) -> testMod.id().equals(dependency))) continue;
                 if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.id().equals(dependency))) continue;
