@@ -1,16 +1,25 @@
 package com.skycatdev.binarysearchtool;
 
+import org.jetbrains.annotations.Nullable;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import javax.swing.JButton;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.nio.file.FileSystems;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import javax.swing.JSplitPane;
 import javax.swing.JProgressBar;
 import javax.swing.JTextPane;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class SearchGui extends JFrame {
     private final JTextPane instructionsPane;
@@ -27,7 +36,10 @@ public class SearchGui extends JFrame {
     private final JLabel folderLabel;
     private final JButton startButton;
     private JPanel mainPanel;
-    private JTextField folderField;
+    private JTextField pathField;
+    private @Nullable Path modsPath;
+    private final ArrayList<Mod> mods = new ArrayList<>();
+    private boolean searching = false;
 
     /**
      * Create the frame.
@@ -81,15 +93,42 @@ public class SearchGui extends JFrame {
         mainPanel.add(topPanel, BorderLayout.NORTH);
         topPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
-        folderLabel = new JLabel(".minecraft Folder");
+        folderLabel = new JLabel("mods Folder");
         topPanel.add(folderLabel);
 
-        folderField = new JTextField();
-        topPanel.add(folderField);
-        folderField.setColumns(50);
+        pathField = new JTextField();
+        topPanel.add(pathField);
+        pathField.setColumns(50);
 
         startButton = new JButton("Start");
+        startButton.addActionListener(this::onStartButtonPressed);
         topPanel.add(startButton);
+    }
+
+    private void onStartButtonPressed(ActionEvent event) {
+        // TODO: Don't start searching twice
+        try {
+            Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
+            File inputFile = inputPath.toFile();
+            if (inputFile.exists()) {
+                if (inputFile.isDirectory()) {
+                    modsPath = inputPath;
+                } else {
+                    // TODO not a directory
+                    return;
+                }
+            } else {
+                // TODO directory does not exist
+                return;
+            }
+        } catch (InvalidPathException e) {
+            // TODO invalid path
+            return;
+        }
+        // modsPath is initialized
+        // populate mods
+        File[] possibleModFiles;
+        // TODO
     }
 
 }
