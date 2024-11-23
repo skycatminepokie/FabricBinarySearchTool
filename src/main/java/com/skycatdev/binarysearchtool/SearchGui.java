@@ -102,9 +102,11 @@ public class SearchGui extends JFrame {
         bottomPanel.add(progressBar);
 
         failureButton = new JButton("Failure");
+        failureButton.addActionListener((event) -> bisect(false));
         bottomPanel.add(failureButton);
 
         successButton = new JButton("Success");
+        failureButton.addActionListener((event) -> bisect(true));
         bottomPanel.add(successButton);
 
         middlePanel = new JSplitPane();
@@ -179,11 +181,7 @@ public class SearchGui extends JFrame {
                     JsonElement dependsElement = fmjJson.get("depends");
                     Set<String> dependencies;
                     if (dependsElement != null) {
-                        dependencies = dependsElement.getAsJsonArray()
-                                .asList()
-                                .stream()
-                                .map((JsonElement::getAsString))
-                                .collect(Collectors.toSet());
+                        dependencies = dependsElement.getAsJsonObject().keySet();
                     } else {
                         dependencies = Collections.emptySet();
                     }
