@@ -23,7 +23,6 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import javax.swing.JSplitPane;
 import javax.swing.JProgressBar;
 import javax.swing.JTextPane;
@@ -146,14 +145,17 @@ public class SearchGui extends JFrame {
                     modsPath = inputPath;
                 } else {
                     // TODO not a directory
+                    System.out.println("Not a directory");
                     return;
                 }
             } else {
                 // TODO directory does not exist
+                System.out.println("Directory does not exist");
                 return;
             }
         } catch (InvalidPathException e) {
             // TODO invalid path
+            System.out.println("Invalid path");
             return;
         }
         // modsPath is initialized
@@ -163,10 +165,12 @@ public class SearchGui extends JFrame {
             possibleModFiles = modsPath.toFile().listFiles(file -> file.getPath().endsWith(".jar"));
         } catch (SecurityException e) {
             // TODO: Could not access
+            System.out.println("Could not access");
             return;
         }
         if (possibleModFiles == null) {
             // TODO: I/O error
+            System.out.println("I/O error");
             return;
         }
         for (File possibleModFile : possibleModFiles) {
@@ -195,12 +199,14 @@ public class SearchGui extends JFrame {
                 }
             } catch (IOException e) {
                 // TODO: JarFile error
+                System.out.println("JarFile error");
             }
         }
         candidateMods.addAll(mods);
         for (Mod mod : mods) {
             if (!mod.tryDisable(modsPath)) {
                 // TODO: Warning with instructions to fix
+                System.out.printf("Couldn't disable mod %s\n", mod.filename());
             }
         }
         searching = true;
@@ -213,23 +219,26 @@ public class SearchGui extends JFrame {
      */
     private void bisect(boolean lastSuccessful) {
         assert modsPath != null;
-        if (lastSuccessful) {
-            workingMods.addAll(testingMods);
-        } else {
-            workingMods.addAll(candidateMods);
-            workingMods.removeAll(testingMods);
-            candidateMods.clear();
-            candidateMods.addAll(testingMods);
-        }
+        // Disabled all the previously-enabled mods
         for (Mod testingMod : testingMods) {
             if (!testingMod.tryDisable(modsPath)) {
                 // TODO: Warning with instructions to fix
+                System.out.printf("Couldn't disabled testing mod %s\n", testingMod.filename());
             }
         }
         for (Mod dependencyMod : testingDependencies) {
             if (!dependencyMod.tryDisable(modsPath)) {
                 // TODO: Warning with instructions to fix
+                System.out.printf("Couldn't disable mod %s\n", dependencyMod.filename());
             }
+        }
+        // Decide which set contains the problem
+        if (lastSuccessful) {
+            workingMods.addAll(testingMods);
+        } else {
+            workingMods.addAll(candidateMods);
+            candidateMods.clear();
+            candidateMods.addAll(testingMods);
         }
         testingMods.clear();
         testingDependencies.clear();
@@ -271,8 +280,10 @@ public class SearchGui extends JFrame {
                 if (!found) {
                     if (mods.stream().anyMatch((mod1 -> mod1.id().equals(dependency)))) {
                         // TODO: I did an oops, it should be in either testingMods, candidateMods, or working mods
+                        System.out.println("I did an oops, it should be in either testingMods, candidateMods, or working mods");
                     } else {
                         // TODO: Missing dependency, you didn't need to binary search, silly.
+                        System.out.println("Missing dependency, you didn't need to binary search, silly.");
                     }
                 }
             }
@@ -282,11 +293,13 @@ public class SearchGui extends JFrame {
         for (Mod testingMod : testingMods) {
             if (!testingMod.tryEnable(modsPath)) {
                 // TODO: Warning with instructions to fix
+                System.out.printf("Couldn't enable testing mod %s\n", testingMod.filename());
             }
         }
         for (Mod dependencyMod : testingDependencies) {
             if (!dependencyMod.tryEnable(modsPath)) {
                 // TODO: Warning with instructions to fix
+                System.out.printf("Couldn't enabled dependency %s\n", dependencyMod.filename());
             }
         }
 
@@ -303,6 +316,6 @@ public class SearchGui extends JFrame {
         // TODO
     }
 
-    // TODO: When finished, enable all mods
+    // TODO: When finished, enable all mods and give result
 
 }
