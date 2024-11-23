@@ -187,11 +187,11 @@ public class SearchGui extends JFrame {
                     }
                     String id = fmjJson.get("id").getAsString();
                     String fileName = possibleModFile.getName();
-                    int extensionIndex = fileName.lastIndexOf(".jar") - 1;
+                    int extensionIndex = fileName.lastIndexOf(".jar");
                     if (extensionIndex == -1) {
                         extensionIndex = fileName.length();
                     }
-                    mods.add(new Mod(id, dependencies, fileName.substring(0, extensionIndex)));
+                    mods.add(new Mod(id, dependencies, fileName.substring(0, extensionIndex))); // TODO: Parse JIJ/"provides", probably by having multiple ids per "Mod"
                 }
             } catch (IOException e) {
                 // TODO: JarFile error
