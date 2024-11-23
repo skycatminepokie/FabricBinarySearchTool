@@ -106,7 +106,7 @@ public class SearchGui extends JFrame {
         bottomPanel.add(failureButton);
 
         successButton = new JButton("Success");
-        failureButton.addActionListener((event) -> bisect(true));
+        successButton.addActionListener((event) -> bisect(true));
         bottomPanel.add(successButton);
 
         middlePanel = new JSplitPane();
@@ -198,8 +198,8 @@ public class SearchGui extends JFrame {
             }
         }
         candidateMods.addAll(mods);
-        for (Mod testingMod : testingMods) {
-            if (!testingMod.tryDisable(modsPath)) {
+        for (Mod mod : mods) {
+            if (!mod.tryDisable(modsPath)) {
                 // TODO: Warning with instructions to fix
             }
         }
