@@ -15,6 +15,7 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.io.*;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
@@ -173,7 +174,7 @@ public class SearchGui extends JFrame {
         }
         for (File possibleModFile : possibleModFiles) {
             try (JarFile jarFile = new JarFile(possibleModFile)) {
-                Mod parsedMod = parseMod(new JarInputStream(new FileInputStream(possibleModFile)), jarFile, "");
+                Mod parsedMod = parseMod(jarFile);
                 if (parsedMod != null) {
                     mods.add(parsedMod);
                 }
@@ -193,62 +194,60 @@ public class SearchGui extends JFrame {
         bisect(true);
     }
 
-    private @Nullable Mod parseMod(JarInputStream jarIs, JarFile baseJarFile, String parentPath) throws IOException {
-
-        JarEntry fmj;
-        while ((fmj = jarIs.getNextJarEntry()) != null) { // If it reads the last one, fmj is set to null and loop ends
-            if (fmj.getName().equals("fabric.mod.json")) {
-                break;
-            }
-        }
+    private @Nullable Mod parseMod(JarFile jarFile) throws IOException {
+        JarEntry fmj = jarFile.getJarEntry("fabric.mod.json");
         if (fmj == null) { // No fmj
             // TODO: Maybe warn that it's not a mod
             return null;
         }
         // jarIs is at the beginning of the fmj
-        JsonObject fmjJson = JsonParser.parseReader(new InputStreamReader(jarIs)).getAsJsonObject();
-        // Ids
-        String id = fmjJson.get("id").getAsString();
-        Set<String> ids = new HashSet<>();
-        ids.add(id);
-        JsonElement provides = fmjJson.get("provides");
-        if (provides != null) {
-            provides.getAsJsonArray().forEach((element) -> ids.add(element.getAsString()));
-        }
+        try (InputStream inputStream = jarFile.getInputStream(fmj)) {
+            JsonObject fmjJson = JsonParser.parseReader(new InputStreamReader(inputStream)).getAsJsonObject();
+            // Ids
+            String id = fmjJson.get("id").getAsString();
+            Set<String> ids = new HashSet<>();
+            ids.add(id);
+            JsonElement provides = fmjJson.get("provides");
+            if (provides != null) {
+                provides.getAsJsonArray().forEach((element) -> ids.add(element.getAsString()));
+            }
 
+            // Deps
+            JsonElement dependsElement = fmjJson.get("depends");
+            HashSet<String> dependencies;
+            if (dependsElement != null) {
+                dependencies = new HashSet<>(dependsElement.getAsJsonObject().keySet());
+            } else {
+                dependencies = new HashSet<>();
+            }
 
-        // Deps
-        JsonElement dependsElement = fmjJson.get("depends");
-        HashSet<String> dependencies;
-        if (dependsElement != null) {
-            dependencies = new HashSet<>(dependsElement.getAsJsonObject().keySet());
-        } else {
-            dependencies = new HashSet<>();
-        }
+            // Filename
+            String fileName = jarFile.getName();
+            int extensionIndex = fileName.lastIndexOf(".jar");
+            if (extensionIndex == -1) {
+                // TODO
+                System.out.println("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?");
+            }
 
-        // Filename (doesn't matter for jijs)
-        String fileName = baseJarFile.getName();
-        int extensionIndex = fileName.lastIndexOf(".jar");
-        if (extensionIndex == -1) {
-            // TODO
-            System.out.println("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?");
-        }
-
-        // Jijs
-        JsonElement jars = fmjJson.get("jars");
-        if (jars != null) {
-            for (JsonElement element : jars.getAsJsonArray()) {
-                String jijPath = element.getAsJsonObject().get("file").getAsString();
-                // TODO: Doesn't work for jijs
-                Mod jijMod = parseMod(new JarInputStream(baseJarFile.getInputStream(baseJarFile.getJarEntry(jijPath))), baseJarFile, parentPath + jijPath + "/");
-                if (jijMod != null) {
-                    ids.addAll(jijMod.ids());
-                    dependencies.addAll(jijMod.dependencies());
+            // TODO: Test Jijs
+            JsonElement jars = fmjJson.get("jars");
+            if (jars != null) {
+                for (JsonElement element : jars.getAsJsonArray()) {
+                    String jijPath = element.getAsJsonObject().get("file").getAsString();
+                    File tempFile = Files.createTempFile("skycatdevbinarysearchtool", ".jar").toFile();
+                    try (FileOutputStream tempFileOutputStream = new FileOutputStream(tempFile)) {
+                        jarFile.getInputStream(jarFile.getJarEntry(jijPath)).transferTo(tempFileOutputStream);
+                    }
+                    Mod jij = parseMod(new JarFile(tempFile));
+                    if (jij != null) {
+                        ids.addAll(jij.ids());
+                        dependencies.addAll(jij.dependencies());
+                    }
                 }
             }
-        }
 
-        return new Mod(ids, dependencies, fileName.substring(0, extensionIndex));
+            return new Mod(ids, dependencies, fileName.substring(0, extensionIndex));
+        }
     }
 
     /**
