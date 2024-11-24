@@ -17,10 +17,7 @@ import java.io.*;
 import java.nio.file.FileSystems;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import javax.swing.JSplitPane;
@@ -175,27 +172,9 @@ public class SearchGui extends JFrame {
         }
         for (File possibleModFile : possibleModFiles) {
             try (JarFile jarFile = new JarFile(possibleModFile)) {
-                JarEntry fmj = jarFile.getJarEntry("fabric.mod.json");
-                if (fmj == null) {
-                    // TODO: Maybe warn that it's not a mod
-                    continue;
-                }
-                try (InputStream inputStream = jarFile.getInputStream(fmj)) {
-                    JsonObject fmjJson = JsonParser.parseReader(new InputStreamReader(inputStream)).getAsJsonObject();
-                    JsonElement dependsElement = fmjJson.get("depends");
-                    Set<String> dependencies;
-                    if (dependsElement != null) {
-                        dependencies = dependsElement.getAsJsonObject().keySet();
-                    } else {
-                        dependencies = Collections.emptySet();
-                    }
-                    String id = fmjJson.get("id").getAsString();
-                    String fileName = possibleModFile.getName();
-                    int extensionIndex = fileName.lastIndexOf(".jar");
-                    if (extensionIndex == -1) {
-                        extensionIndex = fileName.length();
-                    }
-                    mods.add(new Mod(id, dependencies, fileName.substring(0, extensionIndex))); // TODO: Parse JIJ/"provides", probably by having multiple ids per "Mod"
+                Mod parsedMod = parseMod(jarFile);
+                if (parsedMod != null) {
+                    mods.add(parsedMod);
                 }
             } catch (IOException e) {
                 // TODO: JarFile error
@@ -211,6 +190,52 @@ public class SearchGui extends JFrame {
         }
         searching = true;
         bisect(true);
+    }
+
+    private @Nullable Mod parseMod(JarFile jarFile) throws IOException {
+        JarEntry fmj = jarFile.getJarEntry("fabric.mod.json");
+        if (fmj == null) {
+            // TODO: Maybe warn that it's not a mod
+            return null;
+        }
+        try (InputStream fmjInputStream = jarFile.getInputStream(fmj)) {
+            JsonObject fmjJson = JsonParser.parseReader(new InputStreamReader(fmjInputStream)).getAsJsonObject();
+            // Ids
+            String id = fmjJson.get("id").getAsString();
+            Set<String> ids = new HashSet<>();
+            ids.add(id);
+            JsonElement provides = fmjJson.get("provides");
+            if (provides != null) {
+                provides.getAsJsonArray().forEach((element) -> ids.add(element.getAsString()));
+            }
+            JsonElement jars = fmjJson.get("jars");
+            if (jars != null) {
+                jars.getAsJsonArray().forEach(element -> {
+                    String jijPath = element.getAsJsonObject().get("file").getAsString();
+                    jarFile.getEntry(jijPath)
+                });
+            }
+
+
+            // Deps
+            JsonElement dependsElement = fmjJson.get("depends");
+            Set<String> dependencies;
+            if (dependsElement != null) {
+                dependencies = dependsElement.getAsJsonObject().keySet();
+            } else {
+                dependencies = Collections.emptySet();
+            }
+
+            // Filename
+            String fileName = jarFile.getName();
+            int extensionIndex = fileName.lastIndexOf(".jar");
+            if (extensionIndex == -1) {
+                // TODO
+                System.out.println("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?");
+            }
+
+            return new Mod(ids, dependencies, fileName.substring(0, extensionIndex)); // TODO: Parse JIJ
+        }
     }
 
     /**
@@ -256,13 +281,13 @@ public class SearchGui extends JFrame {
             for (String dependency : mod.dependencies()) {
                 if (dependency.equals("minecraft") || dependency.equals("fabricloader") || dependency.equals("java")) continue;
                 // Check if we already have it
-                if (testingMods.stream().anyMatch((testMod) -> testMod.id().equals(dependency))) continue;
-                if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.id().equals(dependency))) continue;
+                if (testingMods.stream().anyMatch((testMod) -> testMod.ids().contains(dependency))) continue;
+                if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.ids().contains(dependency))) continue;
 
                 // Check if it's a candidate
                 boolean found = false;
                 for (int i = 0; i < candidateMods.size(); i++) {
-                    if (candidateMods.get(i).id().equals(dependency)) {
+                    if (candidateMods.get(i).ids().contains(dependency)) {
                         testingMods.add(candidateMods.remove(i));
                         found = true;
                         break;
@@ -270,7 +295,7 @@ public class SearchGui extends JFrame {
                 }
                 if (!found) {
                     for (Mod workingMod : workingMods) {
-                        if (workingMod.id().equals(dependency)) {
+                        if (workingMod.ids().contains(dependency)) {
                             testingDependencies.add(workingMod);
                             found = true;
                             break;
@@ -278,7 +303,7 @@ public class SearchGui extends JFrame {
                     }
                 }
                 if (!found) {
-                    if (mods.stream().anyMatch((mod1 -> mod1.id().equals(dependency)))) {
+                    if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
                         // TODO: I did an oops, it should be in either testingMods, candidateMods, or working mods
                         System.out.println("I did an oops, it should be in either testingMods, candidateMods, or working mods");
                     } else {
