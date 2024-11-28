@@ -130,13 +130,13 @@ public class SearchGui extends JFrame {
     }
 
     public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
-        StringBuilder maybeProblem = new StringBuilder();
+        StringBuilder maybeProblem = new StringBuilder("Might be the problem:\n");
         for (Mod candidate : candidateMods) {
             maybeProblem.append(candidate.name());
             maybeProblem.append('\n');
         }
         maybeProblemPane.setText(maybeProblem.toString());
-        StringBuilder notProblem = new StringBuilder();
+        StringBuilder notProblem = new StringBuilder("Not the problem:\n");
         for (Mod candidate : workingMods) {
             notProblem.append(candidate.name());
             notProblem.append('\n');
