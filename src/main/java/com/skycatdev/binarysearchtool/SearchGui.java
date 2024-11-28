@@ -60,10 +60,6 @@ public class SearchGui extends JFrame {
      */
     private final ArrayList<Mod> testingDependencies = new ArrayList<>();
     private boolean searching = false;
-    /**
-     * Number of mods we're waiting to enable or disable. A hack.
-     */
-    int manualWaiting = 0;
 
     /**
      * Create the frame.
@@ -374,45 +370,31 @@ public class SearchGui extends JFrame {
     /**
      * @implNote Non-blocking. Use carefully.
      */
-    private void disableMod(Mod mod) { // TODO: Make this blocking
+    private void disableMod(Mod mod) {
         assert modsPath != null;
         if (!mod.tryDisable(modsPath)) {
-            manualWaiting++;
-            JDialog dialog = new JDialog();
-            dialog.setLayout(new BorderLayout());
-            dialog.add(new JLabel("Failed to disable mod %s".formatted(mod.filename())), BorderLayout.CENTER);
-            JButton button = new JButton("Try again");
-            button.addActionListener((event) -> {
+            this.setEnabled(false);
+            showDialog("Failed to disable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
+                dialog.setVisible(false);
                 disableMod(mod);
-                manualWaiting--;
             });
-            dialog.add(button, BorderLayout.SOUTH);
-            dialog.pack();
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            dialog.setVisible(true);
         }
+        this.setEnabled(true);
     }
 
     /**
      * @implNote Non-blocking. Use carefully.
      */
-    private void enableMod(Mod mod) { // TODO: Make this blocking
+    private void enableMod(Mod mod) {
         assert modsPath != null;
-        // Try nicely
         if (!mod.tryEnable(modsPath)) {
-            // Force it
-            JDialog dialog = new JDialog();
-            dialog.setLayout(new BorderLayout());
-            dialog.add(new JLabel("Failed to enable mod %s".formatted(mod.filename())), BorderLayout.CENTER);
-            JButton button = new JButton("Try again");
-            button.addActionListener((event) -> {
+            this.setEnabled(false);
+            showDialog("Failed to enable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
+                dialog.setVisible(false);
                 enableMod(mod);
             });
-            dialog.add(button, BorderLayout.SOUTH);
-            dialog.pack();
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            dialog.setVisible(true);
         }
+        this.setEnabled(true);
     }
 
     private void updateProgress() {
