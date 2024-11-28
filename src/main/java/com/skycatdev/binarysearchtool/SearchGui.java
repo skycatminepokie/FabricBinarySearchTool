@@ -6,13 +6,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import java.awt.BorderLayout;
-import javax.swing.JButton;
-import java.awt.FlowLayout;
+import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -21,16 +20,10 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
-import javax.swing.JSplitPane;
-import javax.swing.JProgressBar;
-import javax.swing.JTextPane;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
 
 public class SearchGui extends JFrame {
     public static final Gson GSON = new Gson();
-    private final JTextPane instructionsPane;
+    private final JTextArea instructionsArea;
     private final JPanel bottomPanel;
     private final JButton undoButton;
     private final JButton helpButton;
@@ -81,9 +74,14 @@ public class SearchGui extends JFrame {
         setContentPane(mainPanel);
         mainPanel.setLayout(new BorderLayout(0, 0));
 
-        instructionsPane = new JTextPane();
-        instructionsPane.setText("Instructions");
-        mainPanel.add(instructionsPane, BorderLayout.EAST);
+        instructionsArea = new JTextArea();
+        instructionsArea.setText("Paste the path to your mods folder above. Make sure Minecraft is closed, then click start.");
+        instructionsArea.setBorder(new EmptyBorder(5,5,5,5));
+        instructionsArea.setWrapStyleWord(true);
+        instructionsArea.setLineWrap(true);
+        instructionsArea.setSize(200, 100);
+        instructionsArea.setEditable(false);
+        mainPanel.add(instructionsArea, BorderLayout.EAST);
 
         bottomPanel = new JPanel();
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
@@ -122,7 +120,7 @@ public class SearchGui extends JFrame {
         mainPanel.add(topPanel, BorderLayout.NORTH);
         topPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
-        folderLabel = new JLabel("mods Folder");
+        folderLabel = new JLabel("mods folder");
         topPanel.add(folderLabel);
 
         pathField = new JTextField();
@@ -184,6 +182,7 @@ public class SearchGui extends JFrame {
             }
         }
         candidateMods.addAll(mods);
+        // TODO: Make sure there's at least one mod
         for (Mod mod : mods) {
             if (!mod.tryDisable(modsPath)) {
                 // TODO: Warning with instructions to fix
@@ -191,6 +190,7 @@ public class SearchGui extends JFrame {
             }
         }
         searching = true;
+        startButton.setEnabled(false);
         bisect(true);
     }
 
@@ -229,7 +229,6 @@ public class SearchGui extends JFrame {
                 System.out.println("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?");
             }
 
-            // TODO: Test Jijs
             JsonElement jars = fmjJson.get("jars");
             if (jars != null) {
                 for (JsonElement element : jars.getAsJsonArray()) {
@@ -280,6 +279,18 @@ public class SearchGui extends JFrame {
         testingMods.clear();
         testingDependencies.clear();
         // Ready for next step
+        if (candidateMods.size() == 1) {
+            JDialog finished = createDialog("Finished! The problematic mod is: " + candidateMods.getFirst().filename(), "OK", this::onFinished);
+            finished.setVisible(true);
+            return;
+        } else {
+            if (candidateMods.isEmpty()) {
+                // TODO: Oops
+                JDialog oops = createDialog("Oops! There's no candidate mods. Get help using the help button in the main window.", "OK", this::onFatalError);
+                oops.setVisible(true);
+                return;
+            }
+        }
 
         // Choose mods to use
         candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
@@ -342,7 +353,33 @@ public class SearchGui extends JFrame {
 
         updateLists();
         updateProgress();
-        instructionsPane.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+        instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+    }
+
+    /**
+     * Call after the error has been acknowledged by a button press.
+     */
+    private void onFatalError(ActionEvent actionEvent) {
+        // TODO Enable all mods, close.
+    }
+
+    private void onFinished(ActionEvent actionEvent) {
+        // TODO
+        mods.forEach((mod) -> {
+            assert modsPath != null;
+            mod.tryEnable(modsPath);
+        });
+    }
+
+    private JDialog createDialog(String text, String buttonText, ActionListener buttonAction) {
+        JDialog dialog = new JDialog();
+        dialog.setLayout(new BorderLayout());
+        dialog.add(new JLabel(text), BorderLayout.CENTER);
+        JButton button = new JButton(buttonText);
+        button.addActionListener(buttonAction);
+        dialog.add(button, BorderLayout.SOUTH);
+        dialog.pack();
+        return dialog;
     }
 
     private void updateProgress() {
@@ -352,7 +389,5 @@ public class SearchGui extends JFrame {
     private void updateLists() {
         // TODO
     }
-
-    // TODO: When finished, enable all mods and give result
 
 }
