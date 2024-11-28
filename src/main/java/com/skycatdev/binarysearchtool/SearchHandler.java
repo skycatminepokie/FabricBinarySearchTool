@@ -108,6 +108,7 @@ public class SearchHandler {
         // Ready for next step
         if (candidateMods.size() == 1) {
             showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().name(), "OK", this::onFinished);
+            gui.updateLists(candidateMods, workingMods);
             return;
         } else {
             if (candidateMods.isEmpty()) {
