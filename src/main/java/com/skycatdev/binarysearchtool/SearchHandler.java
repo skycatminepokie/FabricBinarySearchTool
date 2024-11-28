@@ -137,17 +137,17 @@ public class SearchHandler {
 
                 // Check if it's a candidate
                 boolean found = false;
-                for (int i = 0; i < candidateMods.size(); i++) {
-                    if (candidateMods.get(i).ids().contains(dependency)) {
-                        testingMods.add(candidateMods.remove(i));
+                for (Mod workingMod : workingMods) {
+                    if (workingMod.ids().contains(dependency)) {
+                        testingDependencies.add(workingMod);
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
-                    for (Mod workingMod : workingMods) {
-                        if (workingMod.ids().contains(dependency)) {
-                            testingDependencies.add(workingMod);
+                    for (int i = 0; i < candidateMods.size(); i++) {
+                        if (candidateMods.get(i).ids().contains(dependency)) {
+                            testingMods.add(candidateMods.remove(i));
                             found = true;
                             break;
                         }
