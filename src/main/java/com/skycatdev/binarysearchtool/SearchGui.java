@@ -13,8 +13,8 @@ import java.util.ArrayList;
 public class SearchGui extends JFrame {
     public final JTextArea instructionsArea;
     public final JPanel bottomPanel;
-    public final JButton undoButton;
-    public final JButton helpButton;
+    public final JButton undoButton; // TODO
+    public final JButton helpButton; // TODO
     public final JProgressBar progressBar;
     public final JButton failureButton;
     public final JButton successButton;
