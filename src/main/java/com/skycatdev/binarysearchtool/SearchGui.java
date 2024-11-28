@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.FutureTask;
 import java.util.function.BiConsumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -113,10 +114,12 @@ public class SearchGui extends JFrame {
 
         maybeProblemPane = new JTextPane();
         maybeProblemPane.setText("Might be the problem");
+        maybeProblemPane.setEnabled(false);
         middlePanel.setLeftComponent(maybeProblemPane);
 
         notProblemPane = new JTextPane();
         notProblemPane.setText("Not the problem");
+        notProblemPane.setEnabled(false);
         middlePanel.setRightComponent(notProblemPane);
 
         topPanel = new JPanel();
@@ -143,15 +146,15 @@ public class SearchGui extends JFrame {
                 if (inputFile.isDirectory()) {
                     modsPath = inputPath;
                 } else {
-                    createDialog("The path you've specified is not a directory. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+                    showDialog("The path you've specified is not a directory. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
                     return;
                 }
             } else {
-                createDialog("The directory you've specified does not exist. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+                showDialog("The directory you've specified does not exist. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
                 return;
             }
         } catch (InvalidPathException e) {
-            createDialog("The path you've specified is invalid. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("The path you've specified is invalid. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
             return;
         }
         // modsPath is initialized
@@ -160,11 +163,11 @@ public class SearchGui extends JFrame {
         try {
             possibleModFiles = modsPath.toFile().listFiles(file -> file.getPath().endsWith(".jar"));
         } catch (SecurityException e) {
-            createDialog("Could not access a file in the provided path. Make sure Minecraft is closed and try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("Could not access a file in the provided path. Make sure Minecraft is closed and try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
             return;
         }
         if (possibleModFiles == null) {
-            createDialog("There were problems trying to find your mods. Make sure Minecraft is closed and try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("There were problems trying to find your mods. Make sure Minecraft is closed and try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
             return;
         }
         for (File possibleModFile : possibleModFiles) {
@@ -174,19 +177,19 @@ public class SearchGui extends JFrame {
                     mods.add(parsedMod);
                 }
             } catch (IOException e) {
-                createDialog("There were problems trying to read your mods.", "OK", (dialog, event1) -> dialog.setVisible(false));
+                showDialog("There were problems trying to read your mods.", "OK", (dialog, event1) -> dialog.setVisible(false));
                 mods.clear();
                 return;
             }
         }
         candidateMods.addAll(mods);
         if (candidateMods.isEmpty()) {
-            createDialog("Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", "OK", (dialog, event1) -> dialog.setVisible(false));
             return;
         }
 
         for (Mod mod : mods) {
-            disableModOrTryAgain(mod);
+            disableMod(mod);
         }
         searching = true;
         startButton.setEnabled(false);
@@ -223,7 +226,7 @@ public class SearchGui extends JFrame {
             String fileName = jarFile.getName();
             int extensionIndex = fileName.lastIndexOf(".jar");
             if (extensionIndex == -1) {
-                createDialog("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?", "Abort", this::onFatalError);
+                showDialog("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?", "Abort", this::onFatalError);
                 throw new IOException("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?");
             }
 
@@ -253,20 +256,12 @@ public class SearchGui extends JFrame {
      */
     private void bisect(boolean lastSuccessful) {
         assert modsPath != null;
-        while (manualWaiting > 0) {
-            try {
-                //noinspection BusyWait
-                Thread.sleep(1000); // Maybe bad practice, but honestly IDC
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
         // Disabled all the previously-enabled mods
         for (Mod testingMod : testingMods) {
-            disableModOrTryAgain(testingMod);
+            disableMod(testingMod);
         }
         for (Mod dependencyMod : testingDependencies) {
-            disableModOrTryAgain(dependencyMod);
+            disableMod(dependencyMod);
         }
 
         // Decide which set contains the problem
@@ -281,13 +276,11 @@ public class SearchGui extends JFrame {
         testingDependencies.clear();
         // Ready for next step
         if (candidateMods.size() == 1) {
-            JDialog finished = createDialog("Finished! The problematic mod is: " + candidateMods.getFirst().filename(), "OK", this::onFinished);
-            finished.setVisible(true);
+            showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().filename(), "OK", this::onFinished);
             return;
         } else {
             if (candidateMods.isEmpty()) {
-                JDialog oops = createDialog("Oops! There's no candidate mods. Get help using the help button in the main window.", "OK", this::onFatalError);
-                oops.setVisible(true);
+                showDialog("Oops! There's no candidate mods. Get help using the help button in the main window.", "OK", this::onFatalError);
                 return;
             }
         }
@@ -327,38 +320,20 @@ public class SearchGui extends JFrame {
                 }
                 if (!found) {
                     if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
-                        createDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
-                                     "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError);
+                        showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
+                                   "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError);
                     } else {
-                        createDialog("You seem to be missing a dependency - %s\nFabric should've told you this.\nIf I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError);
+                        showDialog("You seem to be missing a dependency - %s\nFabric should've told you this.\nIf I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError);
                     }
                 }
             }
         }
-
-        while (manualWaiting > 0) {
-            try {
-                //noinspection BusyWait
-                Thread.sleep(1000); // Maybe bad practice, but honestly IDC
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
         // Enable mods we're using
         for (Mod testingMod : testingMods) {
-            disableModOrTryAgain(testingMod);
+            enableMod(testingMod);
         }
         for (Mod dependencyMod : testingDependencies) {
-            enableModOrTryAgain(dependencyMod);
-        }
-
-        while (manualWaiting > 0) {
-            try {
-                //noinspection BusyWait
-                Thread.sleep(1000); // Maybe bad practice, but honestly IDC
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            enableMod(dependencyMod);
         }
         updateLists();
         updateProgress();
@@ -378,11 +353,13 @@ public class SearchGui extends JFrame {
     }
 
     private void onFinished(JDialog dialog, ActionEvent actionEvent) {
-        mods.forEach(this::enableModOrTryAgain);
+        mods.forEach(this::enableMod);
         dialog.setVisible(false);
+        failureButton.setEnabled(false); // TODO: Toggle on when undoing
+        successButton.setEnabled(false);
     }
 
-    private JDialog createDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
+    private JDialog showDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
         JDialog dialog = new JDialog();
         dialog.setLayout(new BorderLayout());
         dialog.add(new JLabel(text), BorderLayout.CENTER);
@@ -390,13 +367,14 @@ public class SearchGui extends JFrame {
         button.addActionListener((event) -> buttonAction.accept(dialog, event));
         dialog.add(button, BorderLayout.SOUTH);
         dialog.pack();
+        dialog.setVisible(true);
         return dialog;
     }
 
     /**
      * @implNote Non-blocking. Use carefully.
      */
-    private void disableModOrTryAgain(Mod mod) {
+    private void disableMod(Mod mod) { // TODO: Make this blocking
         assert modsPath != null;
         if (!mod.tryDisable(modsPath)) {
             manualWaiting++;
@@ -405,11 +383,12 @@ public class SearchGui extends JFrame {
             dialog.add(new JLabel("Failed to disable mod %s".formatted(mod.filename())), BorderLayout.CENTER);
             JButton button = new JButton("Try again");
             button.addActionListener((event) -> {
-                disableModOrTryAgain(mod);
+                disableMod(mod);
                 manualWaiting--;
             });
             dialog.add(button, BorderLayout.SOUTH);
             dialog.pack();
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             dialog.setVisible(true);
         }
     }
@@ -417,20 +396,27 @@ public class SearchGui extends JFrame {
     /**
      * @implNote Non-blocking. Use carefully.
      */
-    private void enableModOrTryAgain(Mod mod) {
+    private void enableMod(Mod mod) { // TODO: Make this blocking
+
+
+
+    }
+
+    private void enableMdod(Mod mod) {
         assert modsPath != null;
+        // Try nicely
         if (!mod.tryEnable(modsPath)) {
-            manualWaiting++;
+            // Force it
             JDialog dialog = new JDialog();
             dialog.setLayout(new BorderLayout());
-            dialog.add(new JLabel("Failed to disable mod %s".formatted(mod.filename())), BorderLayout.CENTER);
+            dialog.add(new JLabel("Failed to enable mod %s".formatted(mod.filename())), BorderLayout.CENTER);
             JButton button = new JButton("Try again");
             button.addActionListener((event) -> {
-                disableModOrTryAgain(mod);
-                manualWaiting--;
+                enableMdod(mod);
             });
             dialog.add(button, BorderLayout.SOUTH);
             dialog.pack();
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             dialog.setVisible(true);
         }
     }
@@ -440,7 +426,18 @@ public class SearchGui extends JFrame {
     }
 
     private void updateLists() {
-        // TODO
+        StringBuilder maybeProblem = new StringBuilder();
+        for (Mod candidate : candidateMods) {
+            maybeProblem.append(candidate.filename());
+            maybeProblem.append('\n');
+        }
+        maybeProblemPane.setText(maybeProblem.toString());
+        StringBuilder notProblem = new StringBuilder();
+        for (Mod candidate : workingMods) {
+            notProblem.append(candidate.filename());
+            notProblem.append('\n');
+        }
+        notProblemPane.setText(notProblem.toString());
     }
 
 }
