@@ -15,14 +15,15 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.FutureTask;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class SearchGui extends JFrame {
-    public static final Gson GSON = new Gson();
     private final JTextArea instructionsArea;
     private final JPanel bottomPanel;
     private final JButton undoButton;
@@ -36,9 +37,6 @@ public class SearchGui extends JFrame {
     private final JPanel topPanel;
     private final JLabel folderLabel;
     private final JButton startButton;
-    private JPanel mainPanel;
-    private JTextField pathField;
-    private @Nullable Path modsPath;
     /**
      * A list of all mods from the beginning
      */
@@ -59,6 +57,9 @@ public class SearchGui extends JFrame {
      * Mods that are verified as working AND are dependencies of testingMods
      */
     private final ArrayList<Mod> testingDependencies = new ArrayList<>();
+    private JPanel mainPanel;
+    private JTextField pathField;
+    private @Nullable Path modsPath;
     private boolean searching = false;
 
     /**
@@ -76,7 +77,7 @@ public class SearchGui extends JFrame {
 
         instructionsArea = new JTextArea();
         instructionsArea.setText("Paste the path to your mods folder above. Make sure Minecraft is closed, then click start.");
-        instructionsArea.setBorder(new EmptyBorder(5,5,5,5));
+        instructionsArea.setBorder(new EmptyBorder(5, 5, 5, 5));
         instructionsArea.setWrapStyleWord(true);
         instructionsArea.setLineWrap(true);
         instructionsArea.setSize(200, 100);
@@ -134,6 +135,149 @@ public class SearchGui extends JFrame {
         topPanel.add(startButton);
     }
 
+    /**
+     * @param lastSuccessful If the last set was successful (error is gone)
+     */
+    private void bisect(boolean lastSuccessful) {
+        assert modsPath != null;
+        // Disabled all the previously-enabled mods
+        disableAll(testingMods);
+        disableAll(testingDependencies);
+
+        // Decide which set contains the problem
+        if (lastSuccessful) {
+            workingMods.addAll(testingMods);
+        } else {
+            workingMods.addAll(candidateMods);
+            candidateMods.clear();
+            candidateMods.addAll(testingMods);
+        }
+        testingMods.clear();
+        testingDependencies.clear();
+        // Ready for next step
+        if (candidateMods.size() == 1) {
+            showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().filename(), "OK", this::onFinished);
+            return;
+        } else {
+            if (candidateMods.isEmpty()) {
+                showDialog("Oops! There's no candidate mods. Get help using the help button in the main window.", "OK", this::onFatalError);
+                return;
+            }
+        }
+
+        // Choose mods to use
+        candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
+        int previousSize = candidateMods.size();
+        while (testingMods.size() < previousSize / 2) {
+            // Add the mod to the testing set, remove it from the candidate set
+            Mod mod = candidateMods.removeFirst();
+            testingMods.add(mod);
+
+            // Add dependencies
+            for (String dependency : mod.dependencies()) {
+                if (dependency.equals("minecraft") || dependency.equals("fabricloader") || dependency.equals("java"))
+                    continue;
+                // Check if we already have it
+                if (testingMods.stream().anyMatch((testMod) -> testMod.ids().contains(dependency))) continue;
+                if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.ids().contains(dependency)))
+                    continue;
+
+                // Check if it's a candidate
+                boolean found = false;
+                for (int i = 0; i < candidateMods.size(); i++) {
+                    if (candidateMods.get(i).ids().contains(dependency)) {
+                        testingMods.add(candidateMods.remove(i));
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    for (Mod workingMod : workingMods) {
+                        if (workingMod.ids().contains(dependency)) {
+                            testingDependencies.add(workingMod);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
+                        showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
+                                   "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError);
+                    } else {
+                        showDialog("You seem to be missing a dependency - %s\nFabric should've told you this.\nIf I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError);
+                    }
+                }
+            }
+        }
+        // Enable mods we're using
+        enableAll(testingMods);
+        enableAll(testingDependencies);
+        updateLists();
+        updateProgress();
+        instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+    }
+
+    private void disableAll(ArrayList<Mod> testingMods) {
+        for (Mod testingMod : testingMods) {
+            disableMod(testingMod);
+        }
+    }
+
+    /**
+     * @implNote Non-blocking. Use carefully.
+     */
+    private void disableMod(Mod mod) {
+        assert modsPath != null;
+        if (!mod.tryDisable(modsPath)) {
+            this.setEnabled(false);
+            showDialog("Failed to disable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
+                dialog.setVisible(false);
+                disableMod(mod);
+            });
+        }
+        this.setEnabled(true);
+    }
+
+    private void enableAll(ArrayList<Mod> testingMods) {
+        for (Mod testingMod : testingMods) {
+            enableMod(testingMod);
+        }
+    }
+
+    /**
+     * @implNote Non-blocking. Use carefully.
+     */
+    private void enableMod(Mod mod) {
+        assert modsPath != null;
+        if (!mod.tryEnable(modsPath)) {
+            this.setEnabled(false);
+            showDialog("Failed to enable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
+                dialog.setVisible(false);
+                enableMod(mod);
+            });
+        }
+        this.setEnabled(true);
+    }
+
+    /**
+     * Call after the error has been acknowledged by a button press.
+     */
+    private void onFatalError(JDialog dialog, ActionEvent actionEvent) {
+        mods.forEach((mod) -> {
+            assert modsPath != null;
+            mod.tryEnable(modsPath);
+        });
+        System.exit(1);
+    }
+
+    private void onFinished(JDialog dialog, ActionEvent actionEvent) {
+        mods.forEach(this::enableMod);
+        dialog.setVisible(false);
+        failureButton.setEnabled(false); // TODO: Toggle on when undoing
+        successButton.setEnabled(false);
+    }
+
     private void onStartButtonPressed(ActionEvent event) {
         try {
             Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
@@ -184,9 +328,7 @@ public class SearchGui extends JFrame {
             return;
         }
 
-        for (Mod mod : mods) {
-            disableMod(mod);
-        }
+        disableAll(mods);
         searching = true;
         startButton.setEnabled(false);
         bisect(true);
@@ -246,115 +388,6 @@ public class SearchGui extends JFrame {
         }
     }
 
-    /**
-     *
-     * @param lastSuccessful If the last set was successful (error is gone)
-     */
-    private void bisect(boolean lastSuccessful) {
-        assert modsPath != null;
-        // Disabled all the previously-enabled mods
-        for (Mod testingMod : testingMods) {
-            disableMod(testingMod);
-        }
-        for (Mod dependencyMod : testingDependencies) {
-            disableMod(dependencyMod);
-        }
-
-        // Decide which set contains the problem
-        if (lastSuccessful) {
-            workingMods.addAll(testingMods);
-        } else {
-            workingMods.addAll(candidateMods);
-            candidateMods.clear();
-            candidateMods.addAll(testingMods);
-        }
-        testingMods.clear();
-        testingDependencies.clear();
-        // Ready for next step
-        if (candidateMods.size() == 1) {
-            showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().filename(), "OK", this::onFinished);
-            return;
-        } else {
-            if (candidateMods.isEmpty()) {
-                showDialog("Oops! There's no candidate mods. Get help using the help button in the main window.", "OK", this::onFatalError);
-                return;
-            }
-        }
-
-        // Choose mods to use
-        candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
-        int previousSize = candidateMods.size();
-        while (testingMods.size() < previousSize / 2) {
-            // Add the mod to the testing set, remove it from the candidate set
-            Mod mod = candidateMods.removeFirst();
-            testingMods.add(mod);
-
-            // Add dependencies
-            for (String dependency : mod.dependencies()) {
-                if (dependency.equals("minecraft") || dependency.equals("fabricloader") || dependency.equals("java")) continue;
-                // Check if we already have it
-                if (testingMods.stream().anyMatch((testMod) -> testMod.ids().contains(dependency))) continue;
-                if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.ids().contains(dependency))) continue;
-
-                // Check if it's a candidate
-                boolean found = false;
-                for (int i = 0; i < candidateMods.size(); i++) {
-                    if (candidateMods.get(i).ids().contains(dependency)) {
-                        testingMods.add(candidateMods.remove(i));
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    for (Mod workingMod : workingMods) {
-                        if (workingMod.ids().contains(dependency)) {
-                            testingDependencies.add(workingMod);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
-                        showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
-                                   "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError);
-                    } else {
-                        showDialog("You seem to be missing a dependency - %s\nFabric should've told you this.\nIf I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError);
-                    }
-                }
-            }
-        }
-        // Enable mods we're using
-        for (Mod testingMod : testingMods) {
-            enableMod(testingMod);
-        }
-        for (Mod dependencyMod : testingDependencies) {
-            enableMod(dependencyMod);
-        }
-        updateLists();
-        updateProgress();
-        instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
-    }
-
-    /**
-     * Call after the error has been acknowledged by a button press.
-     */
-    private void onFatalError(JDialog dialog, ActionEvent actionEvent) {
-        // TODO Enable all mods, close.
-        mods.forEach((mod) -> {
-            assert modsPath != null;
-            mod.tryEnable(modsPath);
-        });
-        System.exit(1);
-    }
-
-    private void onFinished(JDialog dialog, ActionEvent actionEvent) {
-        mods.forEach(this::enableMod);
-        dialog.setVisible(false);
-        failureButton.setEnabled(false); // TODO: Toggle on when undoing
-        successButton.setEnabled(false);
-    }
-
     private JDialog showDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
         JDialog dialog = new JDialog();
         dialog.setLayout(new BorderLayout());
@@ -365,40 +398,6 @@ public class SearchGui extends JFrame {
         dialog.pack();
         dialog.setVisible(true);
         return dialog;
-    }
-
-    /**
-     * @implNote Non-blocking. Use carefully.
-     */
-    private void disableMod(Mod mod) {
-        assert modsPath != null;
-        if (!mod.tryDisable(modsPath)) {
-            this.setEnabled(false);
-            showDialog("Failed to disable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
-                dialog.setVisible(false);
-                disableMod(mod);
-            });
-        }
-        this.setEnabled(true);
-    }
-
-    /**
-     * @implNote Non-blocking. Use carefully.
-     */
-    private void enableMod(Mod mod) {
-        assert modsPath != null;
-        if (!mod.tryEnable(modsPath)) {
-            this.setEnabled(false);
-            showDialog("Failed to enable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
-                dialog.setVisible(false);
-                enableMod(mod);
-            });
-        }
-        this.setEnabled(true);
-    }
-
-    private void updateProgress() {
-        // TODO
     }
 
     private void updateLists() {
@@ -414,6 +413,10 @@ public class SearchGui extends JFrame {
             notProblem.append('\n');
         }
         notProblemPane.setText(notProblem.toString());
+    }
+
+    private void updateProgress() {
+        // TODO
     }
 
 }
