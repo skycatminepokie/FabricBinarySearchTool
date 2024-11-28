@@ -26,7 +26,6 @@ public class SearchGui extends JFrame {
     public final JButton startButton;
     public JPanel mainPanel;
     public JTextField pathField;
-    public boolean searching = false;
     public @Nullable SearchHandler searchHandler = null;
 
     /**

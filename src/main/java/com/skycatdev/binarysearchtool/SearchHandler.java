@@ -229,8 +229,6 @@ public class SearchHandler {
         }
 
         disableAll(mods);
-        // searching = true;
-        // startButton.setEnabled(false);
     }
 
     private void enableAll(ArrayList<Mod> testingMods) {
@@ -297,6 +295,9 @@ public class SearchHandler {
 
             // Ids
             String id = fmjJson.get("id").getAsString();
+            if (name == null) {
+                name = id;
+            }
             Set<String> ids = new HashSet<>();
             ids.add(id);
             JsonElement provides = fmjJson.get("provides");
