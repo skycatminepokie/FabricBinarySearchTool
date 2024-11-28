@@ -107,7 +107,7 @@ public class SearchHandler {
         testingDependencies.clear();
         // Ready for next step
         if (candidateMods.size() == 1) {
-            showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().filename(), "OK", this::onFinished);
+            showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().name(), "OK", this::onFinished);
             return;
         } else {
             if (candidateMods.isEmpty()) {
@@ -187,7 +187,7 @@ public class SearchHandler {
             }
             if (!mod.tryDisable(modsPath)) { // Try it twice
                 gui.setEnabled(false);
-                showDialog("Failed to disable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
+                showDialog("Failed to disable mod %s".formatted(mod.name()), "Try again", (dialog, event) -> {
                     dialog.setVisible(false);
                     disableMod(mod);
                 });
@@ -251,7 +251,7 @@ public class SearchHandler {
             }
             if (!mod.tryEnable(modsPath)) { // Try it twice
                 gui.setEnabled(false);
-                showDialog("Failed to enable mod %s".formatted(mod.filename()), "Try again", (dialog, event) -> {
+                showDialog("Failed to enable mod %s".formatted(mod.name()), "Try again", (dialog, event) -> {
                     dialog.setVisible(false);
                     enableMod(mod);
                 });
@@ -288,6 +288,13 @@ public class SearchHandler {
         // jarIs is at the beginning of the fmj
         try (InputStream inputStream = jarFile.getInputStream(fmj)) {
             JsonObject fmjJson = JsonParser.parseReader(new InputStreamReader(inputStream)).getAsJsonObject();
+            // Name
+            JsonElement nameElement = fmjJson.get("name");
+            String name = null;
+            if (nameElement != null) {
+                name = nameElement.getAsString();
+            }
+
             // Ids
             String id = fmjJson.get("id").getAsString();
             Set<String> ids = new HashSet<>();
@@ -330,7 +337,7 @@ public class SearchHandler {
                 }
             }
 
-            return new Mod(ids, dependencies, fileName.substring(0, extensionIndex));
+            return new Mod(name, ids, dependencies, fileName.substring(0, extensionIndex));
         }
     }
 }

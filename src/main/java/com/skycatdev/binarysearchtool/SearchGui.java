@@ -98,12 +98,12 @@ public class SearchGui extends JFrame {
 
         maybeProblemPane = new JTextPane();
         maybeProblemPane.setText("Might be the problem");
-        maybeProblemPane.setEnabled(false);
+        maybeProblemPane.setEditable(false);
         middlePanel.setLeftComponent(maybeProblemPane);
 
         notProblemPane = new JTextPane();
         notProblemPane.setText("Not the problem");
-        notProblemPane.setEnabled(false);
+        notProblemPane.setEditable(false);
         middlePanel.setRightComponent(notProblemPane);
 
         topPanel = new JPanel();
@@ -133,13 +133,13 @@ public class SearchGui extends JFrame {
     public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
         StringBuilder maybeProblem = new StringBuilder();
         for (Mod candidate : candidateMods) {
-            maybeProblem.append(candidate.filename());
+            maybeProblem.append(candidate.name());
             maybeProblem.append('\n');
         }
         maybeProblemPane.setText(maybeProblem.toString());
         StringBuilder notProblem = new StringBuilder();
         for (Mod candidate : workingMods) {
-            notProblem.append(candidate.filename());
+            notProblem.append(candidate.name());
             notProblem.append('\n');
         }
         notProblemPane.setText(notProblem.toString());
