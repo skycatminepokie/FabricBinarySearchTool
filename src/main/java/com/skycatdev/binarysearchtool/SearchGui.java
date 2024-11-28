@@ -167,6 +167,7 @@ public class SearchGui extends JFrame {
 
         // Choose mods to use
         candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
+        updateLists();
         int previousSize = candidateMods.size();
         while (testingMods.size() < previousSize / 2) {
             // Add the mod to the testing set, remove it from the candidate set
@@ -213,7 +214,6 @@ public class SearchGui extends JFrame {
         // Enable mods we're using
         enableAll(testingMods);
         enableAll(testingDependencies);
-        updateLists();
         updateProgress();
         instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
     }
