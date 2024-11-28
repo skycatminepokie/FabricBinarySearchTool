@@ -397,12 +397,6 @@ public class SearchGui extends JFrame {
      * @implNote Non-blocking. Use carefully.
      */
     private void enableMod(Mod mod) { // TODO: Make this blocking
-
-
-
-    }
-
-    private void enableMdod(Mod mod) {
         assert modsPath != null;
         // Try nicely
         if (!mod.tryEnable(modsPath)) {
@@ -412,7 +406,7 @@ public class SearchGui extends JFrame {
             dialog.add(new JLabel("Failed to enable mod %s".formatted(mod.filename())), BorderLayout.CENTER);
             JButton button = new JButton("Try again");
             button.addActionListener((event) -> {
-                enableMdod(mod);
+                enableMod(mod);
             });
             dialog.add(button, BorderLayout.SOUTH);
             dialog.pack();
