@@ -4,14 +4,14 @@ plugins {
 }
 
 group = 'com.skycatdev'
-version = '0.0.2'
+version = '0.0.3'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    shadow 'com.google.code.gson:gson:2.11.0'
+    shadow(implementation('com.google.code.gson:gson:2.11.0'))
     implementation 'org.jetbrains:annotations:24.0.0'
 }
 
