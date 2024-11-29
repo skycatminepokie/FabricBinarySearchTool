@@ -181,7 +181,7 @@ public class SearchHandler {
                                    "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError);
                         System.out.println("Mod gone wot");
                     } else {
-                        showDialog("You seem to be missing a dependency - %s\nFabric should've told you this.\nIf I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError); // TODO: This doesn't account for dependency overrides
+                        showDialog("You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError); // TODO: This doesn't account for dependency overrides
                         System.out.println("Missing a dependency");
                     }
                 }
