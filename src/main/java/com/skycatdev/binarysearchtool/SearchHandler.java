@@ -232,7 +232,17 @@ public class SearchHandler {
                     dialog.setVisible(true);
                 });
             } catch (InterruptedException | InvocationTargetException e) {
-                showDialog("Failed to gracefully fail to disable a mod.", "OK bye", this::onFatalError);
+                SwingUtilities.invokeLater(() -> {
+                    JDialog dialog = new JDialog(gui, true);
+                    dialog.setLayout(new BorderLayout());
+                    dialog.add(new JLabel("Failed to gracefully fail to disable a mod."), BorderLayout.CENTER);
+                    JButton button = new JButton("OK bye");
+                    button.addActionListener((event) -> onFatalError(dialog, event));
+                    dialog.add(button, BorderLayout.SOUTH);
+                    dialog.pack();
+                    dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                    dialog.setVisible(true);
+                });
             }
         }
     }
@@ -319,7 +329,17 @@ public class SearchHandler {
                     dialog.setVisible(true);
                 });
             } catch (InterruptedException | InvocationTargetException e) {
-                throw new RuntimeException(e); // TODO: Fail gracefully
+                SwingUtilities.invokeLater(() -> {
+                    JDialog dialog = new JDialog(gui, true);
+                    dialog.setLayout(new BorderLayout());
+                    dialog.add(new JLabel("Failed to gracefully fail to enable a mod."), BorderLayout.CENTER);
+                    JButton button = new JButton("OK bye");
+                    button.addActionListener((event) -> onFatalError(dialog, event));
+                    dialog.add(button, BorderLayout.SOUTH);
+                    dialog.pack();
+                    dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                    dialog.setVisible(true);
+                });
             }
         }
     }
