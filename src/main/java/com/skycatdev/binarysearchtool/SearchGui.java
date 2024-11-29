@@ -73,7 +73,7 @@ public class SearchGui extends JFrame {
                         searchHandler.bisect(false);
                         return null;
                     }
-                }.doInBackground();
+                }.execute();
             }
         });
         bottomPanel.add(failureButton);
@@ -87,7 +87,7 @@ public class SearchGui extends JFrame {
                         searchHandler.bisect(true);
                         return null;
                     }
-                }.doInBackground();
+                }.execute();
             }
         });
         bottomPanel.add(successButton);
@@ -123,10 +123,21 @@ public class SearchGui extends JFrame {
 
     private void onStartButtonPressed(ActionEvent event) {
         Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
-        searchHandler = SearchHandler.create(inputPath, this);
-        if (searchHandler != null) {
-            startButton.setEnabled(false);
-        }
+        // TODO scuffed way of creating, bisecting, and binding
+        new SwingWorker<@Nullable SearchHandler, Void>() {
+            @Override
+            protected @Nullable SearchHandler doInBackground() {
+                return SearchHandler.createAndBind(inputPath, SearchGui.this);
+            }
+
+            @Override
+            protected void done() {
+                if (searchHandler == null) {
+                    startButton.setEnabled(true);
+                }
+            }
+        }.execute();
+        startButton.setEnabled(false);
     }
 
     public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
@@ -144,8 +155,9 @@ public class SearchGui extends JFrame {
         notProblemPane.setText(notProblem.toString());
     }
 
-    public void updateProgress() {
-        // TODO
+    public void updateProgress(int finished, int max) {
+        progressBar.setMaximum(max);
+        progressBar.setValue(finished);
     }
 
 }

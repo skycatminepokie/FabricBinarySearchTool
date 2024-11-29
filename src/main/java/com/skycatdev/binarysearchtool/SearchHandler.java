@@ -9,6 +9,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -43,18 +44,21 @@ public class SearchHandler {
     private final ArrayList<Mod> testingDependencies = new ArrayList<>();
     private final Path modsPath;
     private final SearchGui gui;
+    private int maxIterations = 0;
+    private int iterations = 0;
 
     private SearchHandler(Path modsPath, SearchGui gui) {
         this.modsPath = modsPath;
         this.gui = gui;
     }
 
-    public static @Nullable SearchHandler create(Path inputPath, SearchGui gui) {
+    public static @Nullable SearchHandler createAndBind(Path inputPath, SearchGui gui) {
         try {
             File inputFile = inputPath.toFile();
             if (inputFile.exists()) {
                 if (inputFile.isDirectory()) {
                     SearchHandler searchHandler = new SearchHandler(inputPath, gui);
+                    SwingUtilities.invokeLater(() -> gui.searchHandler = searchHandler);
                     searchHandler.discoverMods();
                     searchHandler.bisect(true);
                     return searchHandler;
@@ -70,7 +74,6 @@ public class SearchHandler {
             showDialog("The path you've specified is invalid. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
             return null;
         }
-
     }
 
     private static void showDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
@@ -82,6 +85,7 @@ public class SearchHandler {
             button.addActionListener((event) -> buttonAction.accept(dialog, event));
             dialog.add(button, BorderLayout.SOUTH);
             dialog.pack();
+            dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
             dialog.setVisible(true);
         });
     }
@@ -105,10 +109,16 @@ public class SearchHandler {
         }
         testingMods.clear();
         testingDependencies.clear();
+        iterations++;
+
         // Ready for next step
         if (candidateMods.size() == 1) {
+            iterations++;
             showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().name(), "OK", this::onFinished);
-            SwingUtilities.invokeLater(() -> gui.updateLists(candidateMods, workingMods));
+            SwingUtilities.invokeLater(() -> {
+                gui.updateLists(candidateMods, workingMods);
+                gui.updateProgress(iterations, maxIterations);
+            });
             return;
         } else {
             if (candidateMods.isEmpty()) {
@@ -119,7 +129,14 @@ public class SearchHandler {
 
         // Choose mods to use
         candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
-        SwingUtilities.invokeLater(() -> gui.updateLists(candidateMods, workingMods));
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                gui.updateLists(candidateMods, workingMods);
+                gui.updateProgress(iterations, maxIterations);
+            });
+        } catch (InterruptedException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
         int previousSize = candidateMods.size();
         while (testingMods.size() < previousSize / 2) {
             // Add the mod to the testing set, remove it from the candidate set
@@ -158,7 +175,7 @@ public class SearchHandler {
                         showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
                                    "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError);
                     } else {
-                        showDialog("You seem to be missing a dependency - %s\nFabric should've told you this.\nIf I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError);
+                        showDialog("You seem to be missing a dependency - %s\nFabric should've told you this.\nIf I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError); // TODO: This doesn't account for dependency overrides
                     }
                 }
             }
@@ -166,10 +183,7 @@ public class SearchHandler {
         // Enable mods we're using
         enableAll(testingMods);
         enableAll(testingDependencies);
-        SwingUtilities.invokeLater(() -> {
-            gui.updateProgress();
-            gui.instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
-        });
+        SwingUtilities.invokeLater(() -> gui.instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure."));
     }
 
     private void disableAll(ArrayList<Mod> testingMods) {
@@ -185,18 +199,42 @@ public class SearchHandler {
         assert modsPath != null;
         if (!mod.tryDisable(modsPath)) {
             try {
-                Thread.sleep(10);
-            } catch (InterruptedException ignored) {
-            }
-            if (!mod.tryDisable(modsPath)) { // Try it twice
-                gui.setEnabled(false);
-                showDialog("Failed to disable mod %s".formatted(mod.name()), "Try again", (dialog, event) -> {
-                    dialog.setVisible(false);
-                    disableMod(mod);
+                SwingUtilities.invokeAndWait(() -> {
+                    JDialog dialog = new JDialog(gui, true);
+                    dialog.setLayout(new BorderLayout());
+                    dialog.add(new JLabel("Couldn't disable \"%s\". Make sure Minecraft is closed.".formatted(mod.name())), BorderLayout.CENTER);
+
+                    JPanel buttonPanel = new JPanel();
+                    buttonPanel.setLayout(new FlowLayout());
+                    dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+                    JButton abortButton = new JButton("Abort");
+                    abortButton.addActionListener((event) -> onFatalError(dialog, event));
+                    buttonPanel.add(abortButton);
+
+                    //noinspection ExtractMethodRecommender
+                    JButton tryAgainButton = new JButton("Try again");
+                    tryAgainButton.addActionListener((event) -> {
+                        tryAgainButton.setText("Trying again...");
+                        tryAgainButton.setEnabled(false);
+                        if (!mod.tryDisable(modsPath)) {
+                            tryAgainButton.setText("Try again");
+                            tryAgainButton.setEnabled(true);
+                        } else {
+                            dialog.setVisible(false);
+                            dialog.dispose();
+                        }
+                    });
+                    buttonPanel.add(tryAgainButton);
+
+                    dialog.pack();
+                    dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                    dialog.setVisible(true);
                 });
+            } catch (InterruptedException | InvocationTargetException e) {
+                showDialog("Failed to gracefully fail to disable a mod.", "OK bye", this::onFatalError);
             }
         }
-        gui.setEnabled(true);
     }
 
     public void discoverMods() {
@@ -232,6 +270,7 @@ public class SearchHandler {
         }
 
         disableAll(mods);
+        maxIterations = (int) Math.ceil(Math.log10(mods.size()) / Math.log10(2.0d));
     }
 
     private void enableAll(ArrayList<Mod> testingMods) {
@@ -247,18 +286,42 @@ public class SearchHandler {
         assert modsPath != null;
         if (!mod.tryEnable(modsPath)) {
             try {
-                Thread.sleep(10);
-            } catch (InterruptedException ignored) {
-            }
-            if (!mod.tryEnable(modsPath)) { // Try it twice
-                SwingUtilities.invokeLater(() -> gui.setEnabled(false));
-                showDialog("Failed to enable mod %s".formatted(mod.name()), "Try again", (dialog, event) -> {
-                    dialog.setVisible(false);
-                    enableMod(mod);
+                SwingUtilities.invokeAndWait(() -> {
+                    JDialog dialog = new JDialog(gui, true);
+                    dialog.setLayout(new BorderLayout());
+                    dialog.add(new JLabel("Couldn't enable \"%s\". Make sure Minecraft is closed.".formatted(mod.name())), BorderLayout.CENTER);
+
+                    JPanel buttonPanel = new JPanel();
+                    buttonPanel.setLayout(new FlowLayout());
+                    dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+                    JButton abortButton = new JButton("Abort");
+                    abortButton.addActionListener((event) -> onFatalError(dialog, event));
+                    buttonPanel.add(abortButton);
+
+                    //noinspection ExtractMethodRecommender
+                    JButton tryAgainButton = new JButton("Try again");
+                    tryAgainButton.addActionListener((event) -> {
+                        tryAgainButton.setText("Trying again...");
+                        tryAgainButton.setEnabled(false);
+                        if (!mod.tryEnable(modsPath)) {
+                            tryAgainButton.setText("Try again");
+                            tryAgainButton.setEnabled(true);
+                        } else {
+                            dialog.setVisible(false);
+                            dialog.dispose();
+                        }
+                    });
+                    buttonPanel.add(tryAgainButton);
+
+                    dialog.pack();
+                    dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+                    dialog.setVisible(true);
                 });
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e); // TODO: Fail gracefully
             }
         }
-        SwingUtilities.invokeLater(() -> gui.setEnabled(true));
     }
 
     /**
