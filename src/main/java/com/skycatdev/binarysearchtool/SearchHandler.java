@@ -200,9 +200,6 @@ public class SearchHandler {
         }
     }
 
-    /**
-     * @implNote Non-blocking. Use carefully.
-     */
     private void disableMod(Mod mod) {
         assert modsPath != null;
         if (!mod.tryDisable(modsPath)) {
