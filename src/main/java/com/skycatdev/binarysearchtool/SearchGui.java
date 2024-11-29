@@ -68,6 +68,10 @@ public class SearchGui extends JFrame {
                     This will NOT work when there's more than one mod causing the problem, when
                     you're missing dependencies (including Minecraft or Java), or for non-fabric
                     things.
+                    Put in the path to your mod folder and click start. Then, launch the game.
+                    Click "Failure" if it crashes or otherwise doesn't work. Click "Success" if it
+                    works. By repeating this a few times, you can quickly find which mod is the
+                    troublemaker.
                     Fabric discord: https://discord.gg/v6v4pMv
                         - ping @skycatminepokie if this is broken
                     Github repo: https://github.com/skycatminepokie/FabricBinarySearchTool
