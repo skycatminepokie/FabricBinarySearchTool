@@ -108,7 +108,7 @@ public class SearchHandler {
         // Ready for next step
         if (candidateMods.size() == 1) {
             showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().name(), "OK", this::onFinished);
-            gui.updateLists(candidateMods, workingMods);
+            SwingUtilities.invokeLater(() -> gui.updateLists(candidateMods, workingMods));
             return;
         } else {
             if (candidateMods.isEmpty()) {
@@ -119,7 +119,7 @@ public class SearchHandler {
 
         // Choose mods to use
         candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
-        gui.updateLists(candidateMods, workingMods);
+        SwingUtilities.invokeLater(() -> gui.updateLists(candidateMods, workingMods));
         int previousSize = candidateMods.size();
         while (testingMods.size() < previousSize / 2) {
             // Add the mod to the testing set, remove it from the candidate set
@@ -166,8 +166,10 @@ public class SearchHandler {
         // Enable mods we're using
         enableAll(testingMods);
         enableAll(testingDependencies);
-        gui.updateProgress();
-        gui.instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+        SwingUtilities.invokeLater(() -> {
+            gui.updateProgress();
+            gui.instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+        });
     }
 
     private void disableAll(ArrayList<Mod> testingMods) {
@@ -249,14 +251,14 @@ public class SearchHandler {
             } catch (InterruptedException ignored) {
             }
             if (!mod.tryEnable(modsPath)) { // Try it twice
-                gui.setEnabled(false);
+                SwingUtilities.invokeLater(() -> gui.setEnabled(false));
                 showDialog("Failed to enable mod %s".formatted(mod.name()), "Try again", (dialog, event) -> {
                     dialog.setVisible(false);
                     enableMod(mod);
                 });
             }
         }
-        gui.setEnabled(true);
+        SwingUtilities.invokeLater(() -> gui.setEnabled(true));
     }
 
     /**
@@ -273,10 +275,8 @@ public class SearchHandler {
     private void onFinished(JDialog dialog, ActionEvent actionEvent) {
         mods.forEach(this::enableMod);
         dialog.setVisible(false);
-        SwingUtilities.invokeLater(() -> {
-            gui.failureButton.setEnabled(false); // TODO: Toggle on when undoing
-            gui.successButton.setEnabled(false);
-        });
+        gui.failureButton.setEnabled(false); // TODO: Toggle on when undoing
+        gui.successButton.setEnabled(false);
     }
 
     private @Nullable Mod parseMod(JarFile jarFile) throws IOException {
