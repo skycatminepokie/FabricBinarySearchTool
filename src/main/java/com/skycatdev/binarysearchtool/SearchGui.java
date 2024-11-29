@@ -55,7 +55,7 @@ public class SearchGui extends JFrame {
         bottomPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
         undoButton = new JButton("Undo");
-        bottomPanel.add(undoButton);
+        // bottomPanel.add(undoButton);
 
         helpButton = new JButton("Help");
         helpButton.addActionListener((event) -> {
