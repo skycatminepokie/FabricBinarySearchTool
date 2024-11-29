@@ -123,7 +123,7 @@ public class SearchGui extends JFrame {
 
     private void onStartButtonPressed(ActionEvent event) {
         Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
-        // TODO scuffed way of creating, bisecting, and binding
+        // scuffed way of creating, bisecting, and binding but oh well
         new SwingWorker<@Nullable SearchHandler, Void>() {
             @Override
             protected @Nullable SearchHandler doInBackground() {
