@@ -14,7 +14,7 @@ public class SearchGui extends JFrame {
     public final JTextArea instructionsArea;
     public final JPanel bottomPanel;
     public final JButton undoButton; // TODO
-    public final JButton helpButton; // TODO
+    public final JButton helpButton;
     public final JProgressBar progressBar;
     public final JButton failureButton;
     public final JButton successButton;
@@ -58,6 +58,27 @@ public class SearchGui extends JFrame {
         bottomPanel.add(undoButton);
 
         helpButton = new JButton("Help");
+        helpButton.addActionListener((event) -> {
+            JDialog dialog = new JDialog(SearchGui.this);
+            dialog.setTitle("Help");
+            dialog.setLayout(new BorderLayout());
+            JTextArea textArea = new JTextArea("""
+                    Thanks for using my Binary Search Tool! This is useful when you think there is
+                    one mod that is causing problems, but you can't figure out which one from logs.
+                    This will NOT work when there's more than one mod causing the problem, when
+                    you're missing dependencies (including Minecraft or Java), or for non-fabric
+                    things.
+                    Fabric discord: https://discord.gg/v6v4pMv
+                        - ping @skycatminepokie if this is broken
+                    Github repo: https://github.com/skycatminepokie/FabricBinarySearchTool
+                    Ko-Fi: https://ko-fi.com/skycatminepokie
+                    Distributed under the MIT license""");
+            textArea.setEditable(false);
+            dialog.add(textArea, BorderLayout.CENTER);
+            dialog.pack();
+            dialog.setResizable(false);
+            dialog.setVisible(true);
+        });
         bottomPanel.add(helpButton);
 
         progressBar = new JProgressBar();
