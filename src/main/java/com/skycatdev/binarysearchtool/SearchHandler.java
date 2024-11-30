@@ -63,20 +63,25 @@ public class SearchHandler {
                     searchHandler.bisect(true);
                     return searchHandler;
                 } else {
-                    showDialog("The path you've specified is not a directory. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+                    showDialog("The path you've specified is not a directory. Please try again.", "OK", SearchHandler::closeDialog);
                     System.out.println("Not a directory");
                     return null;
                 }
             } else {
-                showDialog("The directory you've specified does not exist. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+                showDialog("The directory you've specified does not exist. Please try again.", "OK", SearchHandler::closeDialog);
                 System.out.println("Directory does not exist");
                 return null;
             }
         } catch (InvalidPathException e) {
-            showDialog("The path you've specified is invalid. Please try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("The path you've specified is invalid. Please try again.", "OK", SearchHandler::closeDialog);
             System.out.println("Invalid path");
             return null;
         }
+    }
+
+    private static void closeDialog(JDialog dialog, ActionEvent event) {
+        dialog.setVisible(false);
+        dialog.dispose();
     }
 
     private static void showDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
@@ -260,12 +265,12 @@ public class SearchHandler {
         try {
             possibleModFiles = modsPath.toFile().listFiles(file -> file.getPath().endsWith(".jar"));
         } catch (SecurityException e) {
-            showDialog("Could not access a file in the provided path. Make sure Minecraft is closed and try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("Could not access a file in the provided path. Make sure Minecraft is closed and try again.", "OK", SearchHandler::closeDialog);
             System.out.println("Could not access file when discovering");
             return;
         }
         if (possibleModFiles == null) {
-            showDialog("There were problems trying to find your mods. Make sure Minecraft is closed and try again.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("There were problems trying to find your mods. Make sure Minecraft is closed and try again.", "OK", SearchHandler::closeDialog);
             System.out.println("Problems with possible mod files");
             return;
         }
@@ -276,7 +281,7 @@ public class SearchHandler {
                     mods.add(parsedMod);
                 }
             } catch (IOException e) {
-                showDialog("There were problems trying to read your mods.", "OK", (dialog, event1) -> dialog.setVisible(false));
+                showDialog("There were problems trying to read your mods.", "OK", SearchHandler::closeDialog);
                 System.out.println("Problems trying to read mods");
                 mods.clear();
                 return;
@@ -284,7 +289,7 @@ public class SearchHandler {
         }
         candidateMods.addAll(mods);
         if (candidateMods.isEmpty()) {
-            showDialog("Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", "OK", (dialog, event1) -> dialog.setVisible(false));
+            showDialog("Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", "OK", SearchHandler::closeDialog);
             System.out.println("No mods found");
             return;
         }
@@ -365,6 +370,7 @@ public class SearchHandler {
     private void onFinished(JDialog dialog, ActionEvent actionEvent) {
         mods.forEach(this::enableMod);
         dialog.setVisible(false);
+        dialog.dispose();
         gui.failureButton.setEnabled(false); // TODO: Toggle on when undoing
         gui.successButton.setEnabled(false);
     }
