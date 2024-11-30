@@ -7,14 +7,14 @@ causing the problem, when you're missing dependencies (including Minecraft or Ja
 1. Download the application from the [Releases](https://github.com/skycatminepokie/FabricBinarySearchTool/releases/latest) 
 page.
 2. Double-click it to run it
-3. Go to your `mods` folder and copy the path (on Windows with the default launcher it'll look like 
-4. `C:\Users\YourName\AppData\Roaming\.minecraft\mods`).
-5. Paste that into the program in the "mods folder" text box. 
-6. Make sure Minecraft is closed, then click start! The tool will disable about half your mods and keep required dependencies enabled too.
-7. Check if the problem was there and close Minecraft (it's ok if it crashed).
-8. If the **SAME** problem is still there, click "Failure." If it's gone, click "Success."
-9. Go back to #7 until the program reports that it is done.
-10. Once you're done, be sure to report the issue to the mod authors.
+3. Go to your `mods` folder and copy the path (on Windows with the default launcher it'll look like
+`C:\Users\YourName\AppData\Roaming\.minecraft\mods`).
+4. Paste that into the program in the "mods folder" text box. 
+5. Make sure Minecraft is closed, then click start! The tool will disable about half your mods and keep required dependencies enabled too.
+6. Check if the problem was there and close Minecraft (it's ok if it crashed).
+7. If the **SAME** problem is still there, click "Failure." If it's gone, click "Success."
+8. Go back to #7 until the program reports that it is done.
+9. Once you're done, be sure to report the issue to the mod authors.
 ## What is a binary search?
 In this context, a binary search is disabling half of your mods, and checking if the problem still occurs. If it does, 
 then you know the problem is in that half of the mods. If it doesn't, the problem is in the other half. Then you do it 
