@@ -34,3 +34,7 @@ see if it's in-scope to fix. If some of your mods are disabled, you can re-enabl
 the `.disabled` part at the end. Windows will warn you about it - it's safe to ignore. You can also enable them via 
 MultiMC (or another launcher probably). For immediate help, try the [Fabric Discord server](https://discord.gg/v6v4pMv). 
 Ping`@skycatminepokie` if the tool is broken. If it's just your Minecraft, ask in the #player-support channel.
+## Building from source
+1. Clone the repo
+2. Run `.\gradlew shadowJar`
+3. Built product is `build/libs/BinarySearchTool-(version)-all.jar`
