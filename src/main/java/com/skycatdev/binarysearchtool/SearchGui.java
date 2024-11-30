@@ -123,12 +123,20 @@ public class SearchGui extends JFrame {
         maybeProblemPane = new JTextPane();
         maybeProblemPane.setText("Might be the problem");
         maybeProblemPane.setEditable(false);
-        middlePanel.setLeftComponent(maybeProblemPane);
+
+        JScrollPane leftSplitPane = new JScrollPane(maybeProblemPane);
+        leftSplitPane.setLayout(new ScrollPaneLayout());
+        leftSplitPane.createVerticalScrollBar();
+        middlePanel.setLeftComponent(leftSplitPane);
 
         notProblemPane = new JTextPane();
         notProblemPane.setText("Not the problem");
         notProblemPane.setEditable(false);
-        middlePanel.setRightComponent(notProblemPane);
+
+        JScrollPane rightSplitPane = new JScrollPane(notProblemPane);
+        rightSplitPane.setLayout(new ScrollPaneLayout());
+        rightSplitPane.createVerticalScrollBar();
+        middlePanel.setRightComponent(rightSplitPane);
 
         topPanel = new JPanel();
         mainPanel.add(topPanel, BorderLayout.NORTH);
