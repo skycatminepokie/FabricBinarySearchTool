@@ -153,7 +153,7 @@ public class SearchGui extends JFrame {
         startButton = new JButton("Start");
         startButton.addActionListener(this::onStartButtonPressed);
         topPanel.add(startButton);
-        System.out.println("Initialized");
+        Main.log("Initialized");
     }
 
     static void closeDialog(JDialog dialog, ActionEvent event) {
@@ -174,7 +174,7 @@ public class SearchGui extends JFrame {
     }
 
     private void onStartButtonPressed(ActionEvent event) {
-        System.out.println("Start button pressed");
+        Main.log("Start button pressed");
         Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
         // scuffed way of creating, bisecting, and binding but oh well
         new SwingWorker<@Nullable SearchHandler, Void>() {
@@ -186,7 +186,7 @@ public class SearchGui extends JFrame {
             @Override
             protected void done() {
                 if (searchHandler == null) {
-                    System.out.println("Failed to make search handler");
+                    Main.log("Failed to make search handler");
                     startButton.setEnabled(true);
                 }
             }
@@ -195,7 +195,7 @@ public class SearchGui extends JFrame {
     }
 
     public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
-        System.out.println("Updating lists");
+        Main.log("Updating lists");
         StringBuilder maybeProblem = new StringBuilder("Might be the problem:\n");
         for (Mod candidate : candidateMods) {
             maybeProblem.append(candidate.name());
@@ -211,7 +211,7 @@ public class SearchGui extends JFrame {
     }
 
     public void updateProgress(int finished, int max) {
-        System.out.println("Updating progress");
+        Main.log("Updating progress");
         progressBar.setMaximum(max);
         progressBar.setValue(finished);
     }

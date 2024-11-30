@@ -63,17 +63,17 @@ public class SearchHandler {
                     return searchHandler;
                 } else {
                     SwingUtilities.invokeLater(() -> SearchGui.showDialog("The path you've specified is not a directory. Please try again.", "OK", SearchGui::closeDialog));
-                    System.out.println("Not a directory");
+                    Main.log("Not a directory");
                     return null;
                 }
             } else {
                 SwingUtilities.invokeLater(() -> SearchGui.showDialog("The directory you've specified does not exist. Please try again.", "OK", SearchGui::closeDialog));
-                System.out.println("Directory does not exist");
+                Main.log("Directory does not exist");
                 return null;
             }
         } catch (InvalidPathException e) {
             SwingUtilities.invokeLater(() -> SearchGui.showDialog("The path you've specified is invalid. Please try again.", "OK", SearchGui::closeDialog));
-            System.out.println("Invalid path");
+            Main.log("Invalid path");
             return null;
         }
     }
@@ -82,7 +82,7 @@ public class SearchHandler {
      * @param lastSuccessful If the last set was successful (error is gone)
      */
     public void bisect(boolean lastSuccessful) {
-        System.out.println("Top of bisect");
+        Main.log("Top of bisect");
         assert modsPath != null;
         // Disabled all the previously-enabled mods
         disableAll(testingMods);
@@ -115,7 +115,7 @@ public class SearchHandler {
                 return;
             }
         }
-        System.out.println("Beginning bisection");
+        Main.log("Beginning bisection");
         // Choose mods to use
         candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
         try {
@@ -131,8 +131,8 @@ public class SearchHandler {
             // Add the mod to the testing set, remove it from the candidate set
             Mod mod = candidateMods.removeFirst();
             testingMods.add(mod);
-            System.out.println("Added mod " + mod.name());
-            System.out.println("Resolving dependencies");
+            Main.log("Added mod " + mod.name());
+            Main.log("Resolving dependencies");
             // Add dependencies
             for (String dependency : mod.dependencies()) {
                 if (dependency.equals("minecraft") || dependency.equals("fabricloader") || dependency.equals("java"))
@@ -164,10 +164,10 @@ public class SearchHandler {
                     if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
                         SwingUtilities.invokeLater(() -> SearchGui.showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
                                                                               "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError));
-                        System.out.println("Mod gone wot");
+                        Main.log("Mod gone wot");
                     } else {
                         SwingUtilities.invokeLater(() -> SearchGui.showDialog("You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError)); // TODO: This doesn't account for dependency overrides
-                        System.out.println("Missing a dependency");
+                        Main.log("Missing a dependency");
                     }
                 }
             }
@@ -176,7 +176,7 @@ public class SearchHandler {
         enableAll(testingMods);
         enableAll(testingDependencies);
         SwingUtilities.invokeLater(() -> gui.instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure."));
-        System.out.println("Bottom of bisect");
+        Main.log("Bottom of bisect");
     }
 
     private void disableAll(ArrayList<Mod> testingMods) {
@@ -238,7 +238,7 @@ public class SearchHandler {
     }
 
     public void discoverMods() {
-        System.out.println("Discovering mods");
+        Main.log("Discovering mods");
         // modsPath is initialized
         // populate mods
         File[] possibleModFiles;
@@ -246,12 +246,12 @@ public class SearchHandler {
             possibleModFiles = modsPath.toFile().listFiles(file -> file.getPath().endsWith(".jar"));
         } catch (SecurityException e) {
             SwingUtilities.invokeLater(() -> SearchGui.showDialog("Could not access a file in the provided path. Make sure Minecraft is closed and try again.", "OK", SearchGui::closeDialog));
-            System.out.println("Could not access file when discovering");
+            Main.log("Could not access file when discovering");
             return;
         }
         if (possibleModFiles == null) {
             SwingUtilities.invokeLater(() -> SearchGui.showDialog("There were problems trying to find your mods. Make sure Minecraft is closed and try again.", "OK", SearchGui::closeDialog));
-            System.out.println("Problems with possible mod files");
+            Main.log("Problems with possible mod files");
             return;
         }
         for (File possibleModFile : possibleModFiles) {
@@ -262,7 +262,7 @@ public class SearchHandler {
                 }
             } catch (IOException e) {
                 SwingUtilities.invokeLater(() -> SearchGui.showDialog("There were problems trying to read your mods.", "OK", SearchGui::closeDialog));
-                System.out.println("Problems trying to read mods");
+                Main.log("Problems trying to read mods");
                 mods.clear();
                 return;
             }
@@ -270,7 +270,7 @@ public class SearchHandler {
         candidateMods.addAll(mods);
         if (candidateMods.isEmpty()) {
             SwingUtilities.invokeLater(() -> SearchGui.showDialog("Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", "OK", SearchGui::closeDialog));
-            System.out.println("No mods found");
+            Main.log("No mods found");
             return;
         }
 
@@ -356,19 +356,19 @@ public class SearchHandler {
     }
 
     private @Nullable Mod parseMod(JarFile jarFile) throws IOException {
-        System.out.println("Parsing mod");
+        Main.log("Parsing mod");
         JarEntry fmj = jarFile.getJarEntry("fabric.mod.json");
-        System.out.println("Found fmj");
+        Main.log("Found fmj");
         if (fmj == null) { // No fmj
             return null;
         }
-        System.out.println("Making input stream");
+        Main.log("Making input stream");
         // jarIs is at the beginning of the fmj
         try (InputStream inputStream = jarFile.getInputStream(fmj)) {
-            System.out.println("Input stream made");
+            Main.log("Input stream made");
             JsonObject fmjJson = JsonParser.parseReader(new InputStreamReader(inputStream)).getAsJsonObject();
             // Name
-            System.out.println("Getting name...");
+            Main.log("Getting name...");
             JsonElement nameElement = fmjJson.get("name");
             String name = null;
             if (nameElement != null) {
@@ -376,7 +376,7 @@ public class SearchHandler {
             }
 
             // Ids
-            System.out.println("Getting ids...");
+            Main.log("Getting ids...");
             String id = fmjJson.get("id").getAsString();
             if (name == null) {
                 name = id;
@@ -389,7 +389,7 @@ public class SearchHandler {
             }
 
             // Deps
-            System.out.println("Getting deps...");
+            Main.log("Getting deps...");
             JsonElement dependsElement = fmjJson.get("depends");
             HashSet<String> dependencies;
             if (dependsElement != null) {
@@ -399,7 +399,7 @@ public class SearchHandler {
             }
 
             // Filename
-            System.out.println("Getting file name...");
+            Main.log("Getting file name...");
             String fileName = jarFile.getName();
             int extensionIndex = fileName.lastIndexOf(".jar");
             if (extensionIndex == -1) {
@@ -408,7 +408,7 @@ public class SearchHandler {
             }
 
             // JIJs
-            System.out.println("Getting JIJs");
+            Main.log("Getting JIJs");
             JsonElement jars = fmjJson.get("jars");
             if (jars != null) {
                 for (JsonElement element : jars.getAsJsonArray()) {
