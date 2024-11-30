@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -63,39 +62,20 @@ public class SearchHandler {
                     searchHandler.bisect(true);
                     return searchHandler;
                 } else {
-                    showDialog("The path you've specified is not a directory. Please try again.", "OK", SearchHandler::closeDialog);
+                    SwingUtilities.invokeLater(() -> SearchGui.showDialog("The path you've specified is not a directory. Please try again.", "OK", SearchGui::closeDialog));
                     System.out.println("Not a directory");
                     return null;
                 }
             } else {
-                showDialog("The directory you've specified does not exist. Please try again.", "OK", SearchHandler::closeDialog);
+                SwingUtilities.invokeLater(() -> SearchGui.showDialog("The directory you've specified does not exist. Please try again.", "OK", SearchGui::closeDialog));
                 System.out.println("Directory does not exist");
                 return null;
             }
         } catch (InvalidPathException e) {
-            showDialog("The path you've specified is invalid. Please try again.", "OK", SearchHandler::closeDialog);
+            SwingUtilities.invokeLater(() -> SearchGui.showDialog("The path you've specified is invalid. Please try again.", "OK", SearchGui::closeDialog));
             System.out.println("Invalid path");
             return null;
         }
-    }
-
-    private static void closeDialog(JDialog dialog, ActionEvent event) {
-        dialog.setVisible(false);
-        dialog.dispose();
-    }
-
-    private static void showDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
-        SwingUtilities.invokeLater(() -> {
-            JDialog dialog = new JDialog();
-            dialog.setLayout(new BorderLayout());
-            dialog.add(new JLabel(text), BorderLayout.CENTER);
-            JButton button = new JButton(buttonText);
-            button.addActionListener((event) -> buttonAction.accept(dialog, event));
-            dialog.add(button, BorderLayout.SOUTH);
-            dialog.pack();
-            dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-            dialog.setVisible(true);
-        });
     }
 
     /**
@@ -123,15 +103,15 @@ public class SearchHandler {
         // Ready for next step
         if (candidateMods.size() == 1) {
             iterations++;
-            showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().name(), "OK", this::onFinished);
             SwingUtilities.invokeLater(() -> {
+                SearchGui.showDialog("Finished! The problematic mod is: " + candidateMods.getFirst().name(), "OK", this::onFinished);
                 gui.updateLists(candidateMods, workingMods);
                 gui.updateProgress(iterations, maxIterations);
             });
             return;
         } else {
             if (candidateMods.isEmpty()) {
-                showDialog("Oops! There's no candidate mods. Get help using the help button in the main window.", "OK", this::onFatalError);
+                SwingUtilities.invokeLater(() -> SearchGui.showDialog("Oops! There's no candidate mods. Get help using the help button in the main window.", "OK", this::onFatalError));
                 return;
             }
         }
@@ -182,11 +162,11 @@ public class SearchHandler {
                 }
                 if (!found) {
                     if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
-                        showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
-                                   "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError);
+                        SwingUtilities.invokeLater(() -> SearchGui.showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
+                                                                              "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError));
                         System.out.println("Mod gone wot");
                     } else {
-                        showDialog("You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError); // TODO: This doesn't account for dependency overrides
+                        SwingUtilities.invokeLater(() -> SearchGui.showDialog("You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError)); // TODO: This doesn't account for dependency overrides
                         System.out.println("Missing a dependency");
                     }
                 }
@@ -265,12 +245,12 @@ public class SearchHandler {
         try {
             possibleModFiles = modsPath.toFile().listFiles(file -> file.getPath().endsWith(".jar"));
         } catch (SecurityException e) {
-            showDialog("Could not access a file in the provided path. Make sure Minecraft is closed and try again.", "OK", SearchHandler::closeDialog);
+            SwingUtilities.invokeLater(() -> SearchGui.showDialog("Could not access a file in the provided path. Make sure Minecraft is closed and try again.", "OK", SearchGui::closeDialog));
             System.out.println("Could not access file when discovering");
             return;
         }
         if (possibleModFiles == null) {
-            showDialog("There were problems trying to find your mods. Make sure Minecraft is closed and try again.", "OK", SearchHandler::closeDialog);
+            SwingUtilities.invokeLater(() -> SearchGui.showDialog("There were problems trying to find your mods. Make sure Minecraft is closed and try again.", "OK", SearchGui::closeDialog));
             System.out.println("Problems with possible mod files");
             return;
         }
@@ -281,7 +261,7 @@ public class SearchHandler {
                     mods.add(parsedMod);
                 }
             } catch (IOException e) {
-                showDialog("There were problems trying to read your mods.", "OK", SearchHandler::closeDialog);
+                SwingUtilities.invokeLater(() -> SearchGui.showDialog("There were problems trying to read your mods.", "OK", SearchGui::closeDialog));
                 System.out.println("Problems trying to read mods");
                 mods.clear();
                 return;
@@ -289,7 +269,7 @@ public class SearchHandler {
         }
         candidateMods.addAll(mods);
         if (candidateMods.isEmpty()) {
-            showDialog("Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", "OK", SearchHandler::closeDialog);
+            SwingUtilities.invokeLater(() -> SearchGui.showDialog("Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", "OK", SearchGui::closeDialog));
             System.out.println("No mods found");
             return;
         }
@@ -423,7 +403,7 @@ public class SearchHandler {
             String fileName = jarFile.getName();
             int extensionIndex = fileName.lastIndexOf(".jar");
             if (extensionIndex == -1) {
-                showDialog("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?", "Abort", this::onFatalError);
+                SwingUtilities.invokeLater(() -> SearchGui.showDialog("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?", "Abort", this::onFatalError));
                 throw new IOException("Couldn't find .jar extension for the jar that definitely had a .jar extension. Wot?");
             }
 

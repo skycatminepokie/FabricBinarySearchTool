@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.function.BiConsumer;
 
 public class SearchGui extends JFrame {
     public final JTextArea instructionsArea;
@@ -153,6 +154,23 @@ public class SearchGui extends JFrame {
         startButton.addActionListener(this::onStartButtonPressed);
         topPanel.add(startButton);
         System.out.println("Initialized");
+    }
+
+    static void closeDialog(JDialog dialog, ActionEvent event) {
+        dialog.setVisible(false);
+        dialog.dispose();
+    }
+
+    public static void showDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
+        JDialog dialog = new JDialog();
+        dialog.setLayout(new BorderLayout());
+        dialog.add(new JLabel(text), BorderLayout.CENTER);
+        JButton button = new JButton(buttonText);
+        button.addActionListener((event) -> buttonAction.accept(dialog, event));
+        dialog.add(button, BorderLayout.SOUTH);
+        dialog.pack();
+        dialog.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        dialog.setVisible(true);
     }
 
     private void onStartButtonPressed(ActionEvent event) {
