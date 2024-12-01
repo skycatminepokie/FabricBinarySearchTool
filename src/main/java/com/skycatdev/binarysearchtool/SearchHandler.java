@@ -8,6 +8,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -17,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -45,10 +49,56 @@ public class SearchHandler {
     private final SearchGui gui;
     private int maxIterations = 0;
     private int iterations = 0;
+    private boolean finished = false;
 
     private SearchHandler(Path modsPath, SearchGui gui) {
         this.modsPath = modsPath;
         this.gui = gui;
+    }
+
+    /**
+     * Used for making sure all mods are enabled before closing the program via the "x" button.
+     */
+    private WindowListener createWindowListener() {
+        return new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (!SearchHandler.this.finished) {
+                    disableAll(mods);
+                }
+                System.exit(0);
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+
+            }
+        };
     }
 
     public static @Nullable SearchHandler createAndBind(Path inputPath, SearchGui gui) {
@@ -57,7 +107,10 @@ public class SearchHandler {
             if (inputFile.exists()) {
                 if (inputFile.isDirectory()) {
                     SearchHandler searchHandler = new SearchHandler(inputPath, gui);
-                    SwingUtilities.invokeLater(() -> gui.searchHandler = searchHandler);
+                    SwingUtilities.invokeLater(() -> {
+                        gui.searchHandler = searchHandler;
+                        gui.addWindowListener(searchHandler.createWindowListener());
+                    });
                     searchHandler.discoverMods();
                     searchHandler.bisect(true);
                     return searchHandler;
@@ -179,8 +232,8 @@ public class SearchHandler {
         Main.log("Bottom of bisect");
     }
 
-    private void disableAll(ArrayList<Mod> testingMods) {
-        for (Mod testingMod : testingMods) {
+    private void disableAll(ArrayList<Mod> mods) {
+        for (Mod testingMod : mods) {
             disableMod(testingMod);
         }
     }
@@ -278,8 +331,8 @@ public class SearchHandler {
         maxIterations = (int) Math.ceil(Math.log10(mods.size()) / Math.log10(2.0d));
     }
 
-    private void enableAll(ArrayList<Mod> testingMods) {
-        for (Mod testingMod : testingMods) {
+    private void enableAll(ArrayList<Mod> mods) {
+        for (Mod testingMod : mods) {
             enableMod(testingMod);
         }
     }
@@ -349,6 +402,7 @@ public class SearchHandler {
 
     private void onFinished(JDialog dialog, ActionEvent actionEvent) {
         mods.forEach(this::enableMod);
+        finished = true;
         dialog.setVisible(false);
         dialog.dispose();
         gui.failureButton.setEnabled(false); // TODO: Toggle on when undoing
