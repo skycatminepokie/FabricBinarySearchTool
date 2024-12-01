@@ -10,7 +10,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.event.WindowStateListener;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -54,51 +52,6 @@ public class SearchHandler {
     private SearchHandler(Path modsPath, SearchGui gui) {
         this.modsPath = modsPath;
         this.gui = gui;
-    }
-
-    /**
-     * Used for making sure all mods are enabled before closing the program via the "x" button.
-     */
-    private WindowListener createWindowListener() {
-        return new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowClosing(WindowEvent e) {
-                if (!SearchHandler.this.finished) {
-                    disableAll(mods);
-                }
-                System.exit(0);
-            }
-
-            @Override
-            public void windowClosed(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowActivated(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowDeactivated(WindowEvent e) {
-
-            }
-        };
     }
 
     public static @Nullable SearchHandler createAndBind(Path inputPath, SearchGui gui) {
@@ -230,6 +183,51 @@ public class SearchHandler {
         enableAll(testingDependencies);
         SwingUtilities.invokeLater(() -> gui.instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure."));
         Main.log("Bottom of bisect");
+    }
+
+    /**
+     * Used for making sure all mods are enabled before closing the program via the "x" button.
+     */
+    private WindowListener createWindowListener() {
+        return new WindowListener() {
+            @Override
+            public void windowActivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (!SearchHandler.this.finished) {
+                    disableAll(mods);
+                }
+                System.exit(0);
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+
+            }
+        };
     }
 
     private void disableAll(ArrayList<Mod> mods) {
