@@ -135,51 +135,58 @@ public class SearchHandler {
             Mod mod = candidateMods.removeFirst();
             testingMods.add(mod);
             Main.log("Added mod " + mod.name());
-            Main.log("Resolving dependencies");
-            // Add dependencies
-            for (String dependency : mod.dependencies()) {
-                if (dependency.equals("minecraft") || dependency.equals("fabricloader") || dependency.equals("java"))
-                    continue;
-                // Check if we already have it
-                if (testingMods.stream().anyMatch((testMod) -> testMod.ids().contains(dependency))) continue;
-                if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.ids().contains(dependency)))
-                    continue;
-
-                // Check if it's a candidate
-                boolean found = false;
-                for (Mod workingMod : workingMods) {
-                    if (workingMod.ids().contains(dependency)) {
-                        testingDependencies.add(workingMod);
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    for (int i = 0; i < candidateMods.size(); i++) {
-                        if (candidateMods.get(i).ids().contains(dependency)) {
-                            testingMods.add(candidateMods.remove(i));
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
-                        SwingUtilities.invokeLater(() -> SearchGui.showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
-                                                                              "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError));
-                        Main.log("Mod gone wot");
-                    } else {
-                        SwingUtilities.invokeLater(() -> SearchGui.showDialog("You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError)); // TODO: This doesn't account for dependency overrides
-                        Main.log("Missing a dependency");
-                    }
-                }
-            }
+            addDeps(mod);
         }
         // Enable mods we're using
         enableAll(testingMods);
         enableAll(testingDependencies);
         SwingUtilities.invokeLater(() -> gui.instructionsArea.setText("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure."));
         Main.log("Bottom of bisect");
+    }
+
+    private void addDeps(Mod mod) {
+        Main.log("Resolving dependencies");
+        // Add dependencies
+        for (String dependency : mod.dependencies()) {
+            if (dependency.equals("minecraft") || dependency.equals("fabricloader") || dependency.equals("java"))
+                continue;
+            // Check if we already have it
+            if (testingMods.stream().anyMatch((testMod) -> testMod.ids().contains(dependency))) continue;
+            if (testingDependencies.stream().anyMatch((dependencyMod) -> dependencyMod.ids().contains(dependency)))
+                continue;
+
+            // Check if it's a candidate
+            boolean found = false;
+            for (Mod workingMod : workingMods) {
+                if (workingMod.ids().contains(dependency)) {
+                    testingDependencies.add(workingMod);
+                    addDeps(workingMod);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                for (int i = 0; i < candidateMods.size(); i++) {
+                    if (candidateMods.get(i).ids().contains(dependency)) {
+                        Mod candidateMod = candidateMods.remove(i);
+                        testingMods.add(candidateMod);
+                        addDeps(candidateMod);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found) {
+                if (mods.stream().anyMatch((mod1 -> mod1.ids().contains(dependency)))) {
+                    SwingUtilities.invokeLater(() -> SearchGui.showDialog("I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
+                                                                          "Please report this, unless you messed with files. In that case, have an angry face >:(", "OK", this::onFatalError));
+                    Main.log("Mod gone wot");
+                } else {
+                    SwingUtilities.invokeLater(() -> SearchGui.showDialog("You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency), "OK", this::onFatalError)); // TODO: This doesn't account for dependency overrides
+                    Main.log("Missing a dependency");
+                }
+            }
+        }
     }
 
     /**
