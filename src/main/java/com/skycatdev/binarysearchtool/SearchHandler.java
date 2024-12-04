@@ -8,8 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -62,7 +60,6 @@ public class SearchHandler {
                     SearchHandler searchHandler = new SearchHandler(inputPath, gui);
                     SwingUtilities.invokeLater(() -> {
                         gui.searchHandler = searchHandler;
-                        gui.addWindowListener(searchHandler.createWindowListener());
                     });
                     searchHandler.discoverMods();
                     searchHandler.bisect(true);
@@ -188,46 +185,10 @@ public class SearchHandler {
     /**
      * Used for making sure all mods are enabled before closing the program via the "x" button.
      */
-    private WindowListener createWindowListener() {
-        return new WindowListener() {
-            @Override
-            public void windowActivated(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowClosed(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowClosing(WindowEvent e) {
-                if (!SearchHandler.this.finished) {
-                    disableAll(mods);
-                }
-                System.exit(0);
-            }
-
-            @Override
-            public void windowDeactivated(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowOpened(WindowEvent e) {
-
-            }
-        };
+    public void onGuiClosing() {
+        if (!finished) {
+            enableAll(mods);
+        }
     }
 
     private void disableAll(ArrayList<Mod> mods) {

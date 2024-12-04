@@ -6,6 +6,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -153,6 +155,9 @@ public class SearchGui extends JFrame {
         startButton = new JButton("Start");
         startButton.addActionListener(this::onStartButtonPressed);
         topPanel.add(startButton);
+
+        addWindowListener(createWindowListener());
+
         Main.log("Initialized");
     }
 
@@ -216,4 +221,45 @@ public class SearchGui extends JFrame {
         progressBar.setValue(finished);
     }
 
+    private WindowListener createWindowListener() {
+        return new WindowListener() {
+            @Override
+            public void windowActivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (searchHandler != null) {
+                    searchHandler.onGuiClosing();
+                }
+                System.exit(0);
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+
+            }
+        };
+    }
 }
