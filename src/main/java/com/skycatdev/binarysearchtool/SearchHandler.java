@@ -453,6 +453,7 @@ public class SearchHandler {
                 for (JsonElement element : jars.getAsJsonArray()) {
                     String jijPath = element.getAsJsonObject().get("file").getAsString();
                     File tempFile = Files.createTempFile("skycatdevbinarysearchtool", ".jar").toFile();
+                    tempFile.deleteOnExit();
                     try (FileOutputStream tempFileOutputStream = new FileOutputStream(tempFile)) {
                         jarFile.getInputStream(jarFile.getJarEntry(jijPath)).transferTo(tempFileOutputStream);
                     }
