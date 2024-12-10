@@ -1,5 +1,6 @@
 package com.skycatdev.binarysearchtool;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.Set;
 
@@ -13,10 +14,18 @@ import java.util.Set;
 public record Mod(String name, Set<String> ids, Set<String> dependencies, String filename) {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean tryDisable(Path modFolder) {
-        return modFolder.resolve(filename + ".jar").toFile().renameTo(modFolder.resolve(filename + ".jar.disabled").toFile());
+        File disabledMod = modFolder.resolve(filename + ".jar.disabled").toFile();
+        if (disabledMod.exists()) {
+            return true; // Already disabled
+        }
+        return modFolder.resolve(filename + ".jar").toFile().renameTo(disabledMod);
     }
 
     public boolean tryEnable(Path modFolder) {
-        return modFolder.resolve(filename + ".jar.disabled").toFile().renameTo(modFolder.resolve(filename + ".jar").toFile());
+        File enabledMod = modFolder.resolve(filename + ".jar").toFile();
+        if (enabledMod.exists()) {
+            return true; // Already enabled
+        }
+        return modFolder.resolve(filename + ".jar.disabled").toFile().renameTo(enabledMod);
     }
 }

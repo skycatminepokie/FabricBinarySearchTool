@@ -1,5 +1,7 @@
 package com.skycatdev.binarysearchtool;
 
+import com.skycatdev.binarysearchtool.advanced.OptionsPane;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -16,6 +18,7 @@ import java.util.function.BiConsumer;
 public class SearchGui extends JFrame {
     public final JTextArea instructionsArea;
     public final JPanel bottomPanel;
+    public final JButton advancedButton;
     public final JButton undoButton; // TODO
     public final JButton helpButton;
     public final JProgressBar progressBar;
@@ -150,7 +153,11 @@ public class SearchGui extends JFrame {
 
         pathField = new JTextField();
         topPanel.add(pathField);
-        pathField.setColumns(50);
+        pathField.setColumns(45);
+
+        advancedButton = new JButton("Advanced...");
+        advancedButton.addActionListener(this::openAdvancedDialog);
+        topPanel.add(advancedButton);
 
         startButton = new JButton("Start");
         startButton.addActionListener(this::onStartButtonPressed);
@@ -178,14 +185,61 @@ public class SearchGui extends JFrame {
         dialog.setVisible(true);
     }
 
+    private void openAdvancedDialog(ActionEvent event) {
+        JDialog discoveringDialog = makeDiscoveryDialog();
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
+                SearchHandler.createAndBind(inputPath, SearchGui.this);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                discoveringDialog.dispose();
+                if (searchHandler != null) {
+                    JDialog dialog = new JDialog(SearchGui.this, true);
+                    dialog.setTitle("Advanced options");
+                    dialog.setLayout(new BorderLayout());
+                    OptionsPane advancedOptionsPane = new OptionsPane(searchHandler);
+                    dialog.add(advancedOptionsPane, BorderLayout.CENTER);
+                    dialog.pack();
+                    dialog.setVisible(true);
+                    dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                }
+            }
+        }.execute();
+        discoveringDialog.setVisible(true);
+    }
+
+    private @NotNull JDialog makeDiscoveryDialog() {
+        JDialog discoveringDialog = new JDialog(this, true);
+        discoveringDialog.setTitle("Discovering mods");
+        discoveringDialog.setLayout(new BorderLayout());
+        JTextArea textArea = new JTextArea("Discovering mods...\nPlease wait...");
+        textArea.setEditable(false);
+        discoveringDialog.add(textArea, BorderLayout.CENTER);
+        discoveringDialog.pack();
+        discoveringDialog.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        discoveringDialog.setResizable(false);
+        return discoveringDialog;
+    }
+
     private void onStartButtonPressed(ActionEvent event) {
         Main.log("Start button pressed");
         Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
         // scuffed way of creating, bisecting, and binding but oh well
-        new SwingWorker<@Nullable SearchHandler, Void>() {
+        new SwingWorker<Void, Void>() {
             @Override
-            protected @Nullable SearchHandler doInBackground() {
-                return SearchHandler.createAndBind(inputPath, SearchGui.this);
+            protected Void doInBackground() {
+                if (searchHandler == null) {
+                    SearchHandler.createAndBind(inputPath, SearchGui.this);
+                }
+                if (searchHandler != null) { // Yes, this may change due to the other block
+                    searchHandler.bisect(true);
+                }
+                return null;
             }
 
             @Override
@@ -193,10 +247,12 @@ public class SearchGui extends JFrame {
                 if (searchHandler == null) {
                     Main.log("Failed to make search handler");
                     startButton.setEnabled(true);
+                    advancedButton.setEnabled(true);
                 }
             }
         }.execute();
         startButton.setEnabled(false);
+        advancedButton.setEnabled(false);
     }
 
     public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
@@ -236,7 +292,13 @@ public class SearchGui extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (searchHandler != null) {
-                    searchHandler.onGuiClosing();
+                    new SwingWorker<Void, Void>() {
+                        @Override
+                        protected Void doInBackground() {
+                            searchHandler.onGuiClosing();
+                            return null;
+                        }
+                    }.execute();
                 }
                 System.exit(0);
             }
