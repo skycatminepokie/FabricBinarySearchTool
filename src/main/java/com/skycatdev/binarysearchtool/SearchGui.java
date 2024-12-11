@@ -226,15 +226,19 @@ public class SearchGui extends JFrame {
         return discoveringDialog;
     }
 
+
     private void onStartButtonPressed(ActionEvent event) {
-        Main.log("Start button pressed");
-        Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
+        startSearching(FileSystems.getDefault().getPath(pathField.getText()));
+    }
+
+    public void startSearching(Path modsPath) {
+        Main.log("Requested start searching");
         // scuffed way of creating, bisecting, and binding but oh well
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() {
                 if (searchHandler == null) {
-                    SearchHandler.createAndBind(inputPath, SearchGui.this);
+                    SearchHandler.createAndBind(modsPath, SearchGui.this);
                 }
                 if (searchHandler != null) { // Yes, this may change due to the other block
                     searchHandler.bisect(true);
