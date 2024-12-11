@@ -5,13 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,7 +14,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -154,7 +148,7 @@ public class SearchHandler {
             iterations++;
             ui.updateLists(candidateMods, workingMods);
             ui.updateProgress(iterations, maxIterations);
-            ui.asyncDisplayOption("Finished!", "Finished! The problematic mod is: " + candidateMods.getFirst().name(), MessageType.INFO, DO_NOTHING_OPTION);
+            ui.onFinished(candidateMods.getFirst());
             return;
         } else {
             if (candidateMods.isEmpty()) {
@@ -296,13 +290,12 @@ public class SearchHandler {
     private void onFinished() {
         mods.forEach(this::enableMod);
         finished = true;
-        ui.onFinished();
     }
 
     /**
-     * Used for making sure all mods are enabled before closing the program via the "x" button.
+     * Used for making sure all mods are enabled before closing the program.
      */
-    public void onGuiClosing() {
+    public void onUiClosing() {
         if (!finished) {
             enableAll(mods);
         }

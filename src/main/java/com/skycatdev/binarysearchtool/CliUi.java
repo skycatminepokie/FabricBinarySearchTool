@@ -54,8 +54,8 @@ public class CliUi implements SearchUi {
     }
 
     @Override
-    public void onFinished() {
-        // TODO
+    public void onFinished(Mod problematicMod) {
+        System.out.printf("Finished! The problematic mod was: %s (%s)%n", problematicMod.name(), problematicMod.filename());
     }
 
     @Override

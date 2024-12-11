@@ -309,7 +309,7 @@ public class SearchGui extends JFrame implements SearchUi {
                     new SwingWorker<Void, Void>() {
                         @Override
                         protected Void doInBackground() {
-                            searchHandler.onGuiClosing();
+                            searchHandler.onUiClosing();
                             return null;
                         }
                     }.execute();

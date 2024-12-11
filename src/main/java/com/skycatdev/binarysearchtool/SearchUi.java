@@ -12,7 +12,7 @@ public interface SearchUi {
     Future<Option> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options);
     SearchHandler getSearchHandler();
 
-    void onFinished();
+    void onFinished(Mod problematicMod);
 
     void setSearchHandler(SearchHandler searchHandler);
 
