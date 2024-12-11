@@ -15,7 +15,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
-public class SearchGui extends JFrame {
+public class SearchGui extends JFrame implements SearchUi {
     public final JTextArea instructionsArea;
     public final JPanel bottomPanel;
     public final JButton advancedButton;
@@ -229,6 +229,16 @@ public class SearchGui extends JFrame {
 
     private void onStartButtonPressed(ActionEvent event) {
         startSearching(FileSystems.getDefault().getPath(pathField.getText()));
+    }
+
+    @Override
+    public SearchHandler getSearchHandler() {
+        return searchHandler;
+    }
+
+    @Override
+    public void setSearchHandler(@Nullable SearchHandler searchHandler) {
+        this.searchHandler = searchHandler;
     }
 
     public void startSearching(Path modsPath) {
