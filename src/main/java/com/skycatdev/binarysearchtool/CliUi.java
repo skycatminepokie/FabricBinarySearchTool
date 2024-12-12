@@ -1,8 +1,11 @@
 package com.skycatdev.binarysearchtool;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -114,5 +117,36 @@ public class CliUi implements SearchUi {
     @Override
     public void updateProgress(int iterations, int maxIterations) {
         // TODO: Add a way to query the search handler, that's what the cli will be doing
+    }
+
+    /**
+     * Runs every task on a new thread, waiting for each task to be done before starting the next.
+     */
+    public static class DialogHandler {
+        protected final Queue<FutureTask<Void>> tasks = new LinkedList<>();
+        protected boolean running = false;
+
+        public synchronized void display(@NotNull FutureTask<Void> dialogFuture) {
+            tasks.add(dialogFuture);
+            if (!running) {
+                runNext();
+            }
+        }
+
+        private synchronized void runNext() {
+            running = true;
+            new Thread(() -> {
+                FutureTask<Void> future;
+                synchronized (DialogHandler.this) {
+                    future = tasks.poll();
+                    if (future == null) {
+                        running = false;
+                        return;
+                    }
+                }
+                future.run();
+                runNext();
+            }).start();
+        }
     }
 }
