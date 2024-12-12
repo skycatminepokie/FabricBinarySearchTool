@@ -63,6 +63,7 @@ public class SearchHandler {
     public static SearchHandler createWithUi(Path inputPath, SearchUi ui) throws IllegalArgumentException, NotDirectoryException {
         SearchHandler searchHandler = new SearchHandler(inputPath, ui);
         ui.setSearchHandler(searchHandler);
+        searchHandler.discoverMods();
         return searchHandler;
     }
 
@@ -161,8 +162,8 @@ public class SearchHandler {
         candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
         ui.updateLists(candidateMods, workingMods);
         ui.updateProgress(iterations, maxIterations);
-        int previousSize = candidateMods.size();
-        while (testingMods.size() < previousSize / 2) {
+        int candidatesSize = candidateMods.size();
+        while (testingMods.size() < candidatesSize / 2) {
             // Add the mod to the testing set, remove it from the candidate set
             Mod mod = candidateMods.removeFirst();
             testingMods.add(mod);

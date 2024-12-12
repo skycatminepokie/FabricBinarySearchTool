@@ -7,9 +7,10 @@ public interface SearchUi {
     /**
      * Show a dialog with options of what to do.
      * Closes when an option is selected, and runs the callback of the option on another thread
+     * @return A future that completes when the option is chosen. Maybe a funny way of doing things, but oh well.
      * @implSpec Must block other ui actions. Must not block the thread it is called on.
      */
-    Future<Option> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options);
+    Future<Void> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options);
     SearchHandler getSearchHandler();
 
     void onFinished(Mod problematicMod);
@@ -31,14 +32,6 @@ public interface SearchUi {
     void updateProgress(int iterations, int maxIterations);
     void sendInstructions(String instructions);
     void start();
-    default void success() {
-        if (getSearchHandler() != null) {
-            getSearchHandler().bisect(true);
-        }
-    };
-    default void failure() {
-        if (getSearchHandler() != null) {
-            getSearchHandler().bisect(false);
-        }
-    };
+    void success();
+    void failure();
 }

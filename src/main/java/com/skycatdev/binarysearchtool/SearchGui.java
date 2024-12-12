@@ -10,10 +10,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.function.BiConsumer;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 
 public class SearchGui extends JFrame implements SearchUi {
     public final JTextArea instructionsArea;
@@ -96,31 +95,11 @@ public class SearchGui extends JFrame implements SearchUi {
         bottomPanel.add(progressBar);
 
         failureButton = new JButton("Failure");
-        failureButton.addActionListener((event) -> {
-            if (searchHandler != null) {
-                new SwingWorker<Void, Void>() {
-                    @Override
-                    protected Void doInBackground() {
-                        searchHandler.bisect(false);
-                        return null;
-                    }
-                }.execute();
-            }
-        });
+        failureButton.addActionListener((event) -> failure());
         bottomPanel.add(failureButton);
 
         successButton = new JButton("Success");
-        successButton.addActionListener((event) -> {
-            if (searchHandler != null) {
-                new SwingWorker<Void, Void>() {
-                    @Override
-                    protected Void doInBackground() {
-                        searchHandler.bisect(true);
-                        return null;
-                    }
-                }.execute();
-            }
-        });
+        successButton.addActionListener((event) -> success());
         bottomPanel.add(successButton);
 
         middlePanel = new JSplitPane();
@@ -160,80 +139,49 @@ public class SearchGui extends JFrame implements SearchUi {
         topPanel.add(advancedButton);
 
         startButton = new JButton("Start");
-        startButton.addActionListener(this::onStartButtonPressed);
+        startButton.addActionListener((event) -> start());
         topPanel.add(startButton);
 
         addWindowListener(createWindowListener());
+        setVisible(true);
 
         Main.log("Initialized");
     }
 
-    static void closeDialog(JDialog dialog, ActionEvent event) {
-        dialog.setVisible(false);
-        dialog.dispose();
-    }
-
-    public static void showDialog(String text, String buttonText, BiConsumer<JDialog, ActionEvent> buttonAction) {
-        JDialog dialog = new JDialog();
-        dialog.setLayout(new BorderLayout());
-        dialog.add(new JLabel(text), BorderLayout.CENTER);
-        JButton button = new JButton(buttonText);
-        button.addActionListener((event) -> buttonAction.accept(dialog, event));
-        dialog.add(button, BorderLayout.SOUTH);
-        dialog.pack();
-        dialog.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        dialog.setVisible(true);
-    }
-
     private void openAdvancedDialog(ActionEvent event) {
-        JDialog discoveringDialog = makeDiscoveryDialog();
-        new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() {
-                Path inputPath = FileSystems.getDefault().getPath(pathField.getText());
-                SearchHandler.createAndBind(inputPath, SearchGui.this);
-                return null;
-            }
-
-            @Override
-            protected void done() {
-                discoveringDialog.dispose();
-                if (searchHandler != null) {
-                    JDialog dialog = new JDialog(SearchGui.this, true);
-                    dialog.setTitle("Advanced options");
-                    dialog.setLayout(new BorderLayout());
-                    OptionsPane advancedOptionsPane = new OptionsPane(searchHandler);
-                    dialog.add(advancedOptionsPane, BorderLayout.CENTER);
-                    dialog.pack();
-                    dialog.setVisible(true);
-                    dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                }
-            }
-        }.execute();
-        discoveringDialog.setVisible(true);
-    }
-
-    private @NotNull JDialog makeDiscoveryDialog() {
-        JDialog discoveringDialog = new JDialog(this, true);
-        discoveringDialog.setTitle("Discovering mods");
-        discoveringDialog.setLayout(new BorderLayout());
-        JTextArea textArea = new JTextArea("Discovering mods...\nPlease wait...");
-        textArea.setEditable(false);
-        discoveringDialog.add(textArea, BorderLayout.CENTER);
-        discoveringDialog.pack();
-        discoveringDialog.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        discoveringDialog.setResizable(false);
-        return discoveringDialog;
+        if (searchHandler != null) {
+            JDialog dialog = new JDialog(SearchGui.this, true);
+            dialog.setTitle("Advanced options");
+            dialog.setLayout(new BorderLayout());
+            OptionsPane advancedOptionsPane = new OptionsPane(searchHandler);
+            dialog.add(advancedOptionsPane, BorderLayout.CENTER);
+            dialog.pack();
+            dialog.setVisible(true);
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        }
     }
 
 
-    private void onStartButtonPressed(ActionEvent event) {
-        startSearching(FileSystems.getDefault().getPath(pathField.getText()));
+    @Override
+    public Future<Void> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options) {
+        FutureTask<Void> future = new FutureTask<>(() -> (null));
+        SwingUtilities.invokeLater(() -> {
+            OptionDialog dialog = new OptionDialog(this, title, text, options, future);
+            dialog.setVisible(true);
+        });
+        return future;
     }
 
     @Override
-    public SearchHandler getSearchHandler() {
+    public @Nullable SearchHandler getSearchHandler() {
         return searchHandler;
+    }
+
+    @Override
+    public void onFinished(Mod problematicMod) {
+        JOptionPane.showMessageDialog(this, "Finished! The problematic mod is " + problematicMod.name() + ".");
+        failureButton.setEnabled(false);
+        successButton.setEnabled(false);
     }
 
     @Override
@@ -241,34 +189,7 @@ public class SearchGui extends JFrame implements SearchUi {
         this.searchHandler = searchHandler;
     }
 
-    public void startSearching(Path modsPath) {
-        Main.log("Requested start searching");
-        // scuffed way of creating, bisecting, and binding but oh well
-        new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() {
-                if (searchHandler == null) {
-                    SearchHandler.createAndBind(modsPath, SearchGui.this);
-                }
-                if (searchHandler != null) { // Yes, this may change due to the other block
-                    searchHandler.bisect(true);
-                }
-                return null;
-            }
-
-            @Override
-            protected void done() {
-                if (searchHandler == null) {
-                    Main.log("Failed to make search handler");
-                    startButton.setEnabled(true);
-                    advancedButton.setEnabled(true);
-                }
-            }
-        }.execute();
-        startButton.setEnabled(false);
-        advancedButton.setEnabled(false);
-    }
-
+    @Override
     public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
         Main.log("Updating lists");
         StringBuilder maybeProblem = new StringBuilder("Might be the problem:\n");
@@ -285,10 +206,60 @@ public class SearchGui extends JFrame implements SearchUi {
         notProblemPane.setText(notProblem.toString());
     }
 
+    @Override
     public void updateProgress(int finished, int max) {
         Main.log("Updating progress");
         progressBar.setMaximum(max);
         progressBar.setValue(finished);
+    }
+
+    @Override
+    public void sendInstructions(String instructions) {
+        SwingUtilities.invokeLater(() -> instructionsArea.setText(instructions));
+    }
+
+    @Override
+    public void start() {
+        Main.log("Requested start searching");
+        if (getSearchHandler() != null) {
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() {
+                    if (getSearchHandler() != null) {
+                        getSearchHandler().bisect(true);
+                    }
+                    return null;
+                }
+            }.execute();
+            startButton.setEnabled(false);
+            advancedButton.setEnabled(false);
+        }
+    }
+
+    @Override
+    public void success() {
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                if (getSearchHandler() != null) {
+                    getSearchHandler().bisect(true);
+                }
+                return null;
+            }
+        }.execute();
+    }
+
+    @Override
+    public void failure() {
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                if (getSearchHandler() != null) {
+                    getSearchHandler().bisect(false);
+                }
+                return null;
+            }
+        }.execute();
     }
 
     private WindowListener createWindowListener() {
@@ -306,13 +277,7 @@ public class SearchGui extends JFrame implements SearchUi {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (searchHandler != null) {
-                    new SwingWorker<Void, Void>() {
-                        @Override
-                        protected Void doInBackground() {
-                            searchHandler.onUiClosing();
-                            return null;
-                        }
-                    }.execute();
+                    searchHandler.onUiClosing();
                 }
                 System.exit(0);
             }

@@ -17,8 +17,8 @@ public class CliUi implements SearchUi {
     }
 
     @Override
-    public Future<Option> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options) {
-        FutureTask<Option> future = new FutureTask<>(() -> {
+    public Future<Void> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options) {
+        FutureTask<Void> future = new FutureTask<>(() -> {
             System.out.println(text); // TODO allow shorthand
             for (Option option : options) {
                 System.out.println(option.name());
@@ -42,8 +42,9 @@ public class CliUi implements SearchUi {
                     System.out.println("That was not an option!");
                 }
             }
-            return chosen;
+            return null;
         });
+        // TODO: Pause other stuff
         new Thread(future).start();
         return future;
     }
@@ -80,9 +81,16 @@ public class CliUi implements SearchUi {
 
     @Override
     public void start() {
-        if (searchHandler != null) {
-            searchHandler.discoverMods();
-            searchHandler.bisect(true);
-        }
+        // TODO
+    }
+
+    @Override
+    public void success() {
+        // TODO
+    }
+
+    @Override
+    public void failure() {
+        // TODO
     }
 }

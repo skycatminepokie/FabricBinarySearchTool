@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 public class Main {
     public static void main(String[] args) {
-        boolean enableGui = false; // TODO: Accept args
+        boolean enableGui = true; // TODO: Accept args
         if (args.length > 0) {
             String pathString = args[0]; // TODO: Don't hardcode location
             if (isValidFolder(pathString)) {
@@ -35,13 +35,21 @@ public class Main {
 
     private static void startUi(boolean enableGui, Path modsPath) {
         if (enableGui) {
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    SearchGui gui = new SearchGui();
+                    SearchHandler.createWithUi(modsPath, gui);
+                    gui.setVisible(true);
+                } catch (NotDirectoryException | IllegalArgumentException e) {
+                    throw new RuntimeException("The directory should've been validated by now.", e);
+                }
+            });
+        } else {
             try {
                 SearchHandler.createWithUi(modsPath, new CliUi());
             } catch (NotDirectoryException | IllegalArgumentException e) {
-                throw new RuntimeException("The directory should've been validated by now.",e);
+                throw new RuntimeException("The directory should've been validated by now.", e);
             }
-        } else {
-            // TODO
         }
     }
 
