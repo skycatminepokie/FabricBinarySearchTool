@@ -62,8 +62,8 @@ public class SearchHandler {
      */
     public static SearchHandler createWithUi(Path inputPath, SearchUi ui) throws IllegalArgumentException, NotDirectoryException {
         SearchHandler searchHandler = new SearchHandler(inputPath, ui);
-        ui.initialize(searchHandler);
         searchHandler.discoverMods();
+        ui.initialize(searchHandler);
         return searchHandler;
     }
 
@@ -204,6 +204,7 @@ public class SearchHandler {
     }
 
     public void discoverMods() {
+        // If something here goes wrong, the user should end up being forced to quit.
         Main.log("Discovering mods");
         // modsPath is initialized
         // populate mods
@@ -211,13 +212,13 @@ public class SearchHandler {
         try {
             possibleModFiles = modsPath.toFile().listFiles(file -> file.getPath().endsWith(".jar"));
         } catch (SecurityException e) {
-            ui.asyncDisplayOption("Could not access file", "Could not access a file in the provided path. Make sure Minecraft is closed and try again.", MessageType.INFO, DO_NOTHING_OPTION);
             Main.log("Could not access file when discovering");
+            ui.asyncDisplayOption("Could not access file", "Could not access a file in the provided path. Make sure Minecraft is closed and try again.", MessageType.INFO, new Option[]{new Option("That's not good, I'll try again", this::onFatalError)});
             return;
         }
         if (possibleModFiles == null) {
-            ui.asyncDisplayOption("Problems with possible mod files", "There were problems trying to find your mods. Make sure Minecraft is closed and try again.", MessageType.INFO, DO_NOTHING_OPTION);
             Main.log("Problems with possible mod files");
+            ui.asyncDisplayOption("Problems with possible mod files", "There were problems trying to find your mods. Make sure Minecraft is closed and try again.", MessageType.INFO, new Option[]{new Option("That's not good, I'll try again", this::onFatalError)});
             return;
         }
         for (File possibleModFile : possibleModFiles) {
@@ -227,16 +228,16 @@ public class SearchHandler {
                     mods.add(parsedMod);
                 }
             } catch (IOException e) {
-                ui.asyncDisplayOption("Problems", "There were problems trying to read your mods.", MessageType.INFO, DO_NOTHING_OPTION);
                 Main.log("Problems trying to read mods");
                 mods.clear();
+                ui.asyncDisplayOption("Problems", "There were problems trying to read your mods.", MessageType.INFO, new Option[]{new Option("That's not good, I'll try again", this::onFatalError)});
                 return;
             }
         }
         candidateMods.addAll(mods);
         if (candidateMods.isEmpty()) {
-            ui.asyncDisplayOption("Can't find mods", "Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", MessageType.INFO, DO_NOTHING_OPTION);
             Main.log("No mods found");
+            ui.asyncDisplayOption("Can't find mods", "Couldn't find any mods. Make sure you've got the right folder, and you have Fabric mods in it.", MessageType.INFO, new Option[]{new Option("That's not good, I'll try again", this::onFatalError)});
             return;
         }
 

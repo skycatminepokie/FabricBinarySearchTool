@@ -13,6 +13,7 @@ public class CliUi implements SearchUi {
      */
     protected @Nullable SearchHandler searchHandler = null;
     protected Scanner scanner = new Scanner(System.in);
+    protected final DialogHandler dialogHandler = new DialogHandler();
 
     public CliUi() {
     }
@@ -20,11 +21,12 @@ public class CliUi implements SearchUi {
     @Override
     public Future<Void> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options) {
         FutureTask<Void> future = new FutureTask<>(() -> {
-            syncDisplayOption(text, options);
+            blockingDisplayOption(text, options);
             return null;
         });
-        // TODO: Pause other stuff
-        new Thread(future).start();
+        synchronized (dialogHandler) {
+            dialogHandler.display(future);
+        }
         return future;
     }
 
@@ -44,7 +46,7 @@ public class CliUi implements SearchUi {
     @Override
     public void initialize(SearchHandler searchHandler) {
         this.searchHandler = searchHandler;
-        new Thread(() -> syncDisplayOption("Ready to start?", new Option[]{new Option("start", this::start)})).start();
+        asyncDisplayOption("", "Ready to start?", MessageType.NONE, new Option[]{new Option("start", this::start)});
     }
 
     @Override
@@ -61,7 +63,7 @@ public class CliUi implements SearchUi {
 
     @Override
     public void onBisectFinished() {
-        new Thread(() -> syncDisplayOption("Is the problem fixed?", new Option[]{new Option("Yes", this::success), new Option("No", this::failure)})).start();
+        new Thread(() -> blockingDisplayOption("Is the problem fixed?", new Option[]{new Option("Yes", this::success), new Option("No", this::failure)})).start();
     }
 
     @Override
@@ -80,7 +82,7 @@ public class CliUi implements SearchUi {
         }
     }
 
-    private void syncDisplayOption(String text, Option[] options) {
+    private void blockingDisplayOption(String text, Option[] options) {
         System.out.println(text); // TODO allow shorthand
         for (Option option : options) {
             System.out.println(option.name());
