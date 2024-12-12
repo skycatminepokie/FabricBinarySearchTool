@@ -27,10 +27,8 @@ public class SearchGui extends JFrame implements SearchUi {
     public final JTextPane maybeProblemPane;
     public final JTextPane notProblemPane;
     public final JPanel topPanel;
-    public final JLabel folderLabel;
     public final JButton startButton;
     public JPanel mainPanel;
-    public JTextField pathField;
     public @Nullable SearchHandler searchHandler = null;
 
     /**
@@ -126,13 +124,6 @@ public class SearchGui extends JFrame implements SearchUi {
         topPanel = new JPanel();
         mainPanel.add(topPanel, BorderLayout.NORTH);
         topPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-
-        folderLabel = new JLabel("mods folder");
-        topPanel.add(folderLabel);
-
-        pathField = new JTextField();
-        topPanel.add(pathField);
-        pathField.setColumns(45);
 
         advancedButton = new JButton("Advanced...");
         advancedButton.addActionListener(this::openAdvancedDialog);
