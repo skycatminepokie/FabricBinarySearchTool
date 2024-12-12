@@ -95,10 +95,12 @@ public class SearchGui extends JFrame implements SearchUi {
         failureButton = new JButton("Failure");
         failureButton.addActionListener((event) -> failure());
         bottomPanel.add(failureButton);
+        failureButton.setEnabled(false);
 
         successButton = new JButton("Success");
         successButton.addActionListener((event) -> success());
         bottomPanel.add(successButton);
+        successButton.setEnabled(false);
 
         middlePanel = new JSplitPane();
         mainPanel.add(middlePanel, BorderLayout.CENTER);
