@@ -4,27 +4,30 @@ import javax.swing.*;
 import java.io.File;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
+import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
-        boolean enableGui = true; // TODO: Accept args
+    private static boolean isValidFolder(String input) {
+        File inputFile = Path.of(input).toFile();
+        return inputFile.exists() && inputFile.isDirectory();
+    }
+
+    public static void log(String message) {
+        System.out.println(message);
+    }
+
+    public static void main(String[] args) { // args: path (--gui) // TODO: Allow launching gui from CLI
         if (args.length > 0) {
-            String pathString = args[0]; // TODO: Don't hardcode location
-            if (isValidFolder(pathString)) {
-                startUi(enableGui, Path.of(pathString));
+            if (isValidFolder(args[0])) {
+                startUi(false, Path.of(args[0]));
             } else {
-                log("Invalid path string");
-                if (enableGui) {
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(null, "Command-line specified path is invalid.", "Error", JOptionPane.ERROR_MESSAGE));
-                } else {
-                    System.out.println("Command-line specified path is invalid.");
-                }
+                System.out.println("The first argument was not a valid folder");
             }
         } else {
             SwingUtilities.invokeLater(() -> {
                 String input = JOptionPane.showInputDialog(null, "Welcome! To get started, input the full path to your mods folder below.", "");
                 if (isValidFolder(input)) {
-                    startUi(enableGui, Path.of(input));
+                    startUi(true, Path.of(input));
                 } else {
                     JOptionPane.showMessageDialog(null, "That's not a valid folder. Please try again.");
                     main(args);
@@ -33,8 +36,8 @@ public class Main {
         }
     }
 
-    private static void startUi(boolean enableGui, Path modsPath) {
-        if (enableGui) {
+    private static void startUi(boolean useGui, Path modsPath) {
+        if (useGui) {
             SwingUtilities.invokeLater(() -> {
                 try {
                     SearchGui gui = new SearchGui();
@@ -51,14 +54,5 @@ public class Main {
                 throw new RuntimeException("The directory should've been validated by now.", e);
             }
         }
-    }
-
-    private static boolean isValidFolder(String input) {
-        File inputFile = Path.of(input).toFile();
-        return inputFile.exists() && inputFile.isDirectory();
-    }
-
-    public static void log(String message) {
-        System.out.println(message);
     }
 }

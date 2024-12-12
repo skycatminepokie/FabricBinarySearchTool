@@ -58,11 +58,11 @@ public class SearchHandler {
      * @return A new {@link SearchHandler}.
      * @throws IllegalArgumentException If the file at {@code inputPath} does not exist.
      * @throws NotDirectoryException If the file at {@code inputPath} is not a directory.
-     * @implSpec {@link SearchUi#setSearchHandler(SearchHandler)} has NOT been called.
+     * @implSpec {@link SearchUi#initialize(SearchHandler)} has NOT been called.
      */
     public static SearchHandler createWithUi(Path inputPath, SearchUi ui) throws IllegalArgumentException, NotDirectoryException {
         SearchHandler searchHandler = new SearchHandler(inputPath, ui);
-        ui.setSearchHandler(searchHandler);
+        ui.initialize(searchHandler);
         searchHandler.discoverMods();
         return searchHandler;
     }
@@ -179,6 +179,7 @@ public class SearchHandler {
         enableAll(testingMods);
         enableAll(testingDependencies);
         ui.sendInstructions("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+        ui.onBisectFinished();
         Main.log("Bottom of bisect");
     }
 

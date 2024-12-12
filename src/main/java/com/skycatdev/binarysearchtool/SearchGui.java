@@ -185,7 +185,7 @@ public class SearchGui extends JFrame implements SearchUi {
     }
 
     @Override
-    public void setSearchHandler(@Nullable SearchHandler searchHandler) {
+    public void initialize(@Nullable SearchHandler searchHandler) {
         this.searchHandler = searchHandler;
     }
 
@@ -219,6 +219,12 @@ public class SearchGui extends JFrame implements SearchUi {
     }
 
     @Override
+    public void onBisectFinished() {
+        successButton.setEnabled(true);
+        failureButton.setEnabled(true);
+    }
+
+    @Override
     public void start() {
         Main.log("Requested start searching");
         if (getSearchHandler() != null) {
@@ -247,6 +253,8 @@ public class SearchGui extends JFrame implements SearchUi {
                 return null;
             }
         }.execute();
+        failureButton.setEnabled(false);
+        successButton.setEnabled(false);
     }
 
     @Override
@@ -260,6 +268,8 @@ public class SearchGui extends JFrame implements SearchUi {
                 return null;
             }
         }.execute();
+        failureButton.setEnabled(false);
+        successButton.setEnabled(false);
     }
 
     private WindowListener createWindowListener() {

@@ -15,7 +15,7 @@ public interface SearchUi {
 
     void onFinished(Mod problematicMod);
 
-    void setSearchHandler(SearchHandler searchHandler);
+    void initialize(SearchHandler searchHandler);
 
     /**
      * Update the display of the mod lists. Blocking.
@@ -31,6 +31,12 @@ public interface SearchUi {
      */
     void updateProgress(int iterations, int maxIterations);
     void sendInstructions(String instructions);
+
+    /**
+     * SearchHandler is finished bisecting and is ready for feedback.
+     * It is waiting for you to call success or failure.
+     */
+    void onBisectFinished();
     void start();
     void success();
     void failure();
