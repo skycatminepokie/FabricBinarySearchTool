@@ -371,6 +371,12 @@ public class SearchHandler {
                     }
                 }
             }
+            /*
+            Ignore all deps that are provided by itself. For example, modules in Fabric API depend on other modules in Fabric API.
+            These deps of deps collect up, making Fabric API have many dependencies, despite all of them being supplied by itself.
+            This line fixes that.
+             */
+            dependencies.removeAll(ids);
 
             return new Mod(name, ids, dependencies, fileName.substring(0, extensionIndex));
         }
