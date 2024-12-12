@@ -4,7 +4,6 @@ import javax.swing.*;
 import java.io.File;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
-import java.util.Scanner;
 
 public class Main {
     private static boolean isValidFolder(String input) {
@@ -16,9 +15,13 @@ public class Main {
         System.out.println(message);
     }
 
-    public static void main(String[] args) { // args: path (--gui) // TODO: Allow launching gui from CLI
+    public static void main(String[] args) { // args: path (--gui) // Warning: The flag parsing is not actually flag parsing
         if (args.length > 0) {
             if (isValidFolder(args[0])) {
+                if (args.length > 1) {
+                    startUi(args[1].equals("--gui"), Path.of(args[0]));
+                    return;
+                }
                 startUi(false, Path.of(args[0]));
             } else {
                 System.out.println("The first argument was not a valid folder");
