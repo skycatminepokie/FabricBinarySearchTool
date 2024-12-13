@@ -163,7 +163,7 @@ public class SearchHandler {
             finished = true;
             ui.updateLists(candidateMods, workingMods);
             ui.updateProgress(iterations, maxIterations);
-            ui.onFinished(candidateMods.getFirst());
+            ui.onFinished(candidateMods);
             enableAll(mods);
             return;
         } else {
@@ -174,17 +174,41 @@ public class SearchHandler {
         }
         Main.log("Beginning bisection");
         // Choose mods to use
-        candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
-        ui.updateLists(candidateMods, workingMods);
-        ui.updateProgress(iterations, maxIterations);
-        int candidatesSize = candidateMods.size();
-        while (testingMods.size() < candidatesSize / 2) {
-            // Add the mod to the testing set, remove it from the candidate set
-            Mod mod = candidateMods.removeFirst();
-            testingMods.add(mod);
-            Main.log("Added mod " + mod.name());
-            addDeps(mod);
+        int rotation = 0;
+        boolean choseMods = false;
+        while (rotation < candidateMods.size()) {
+            candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
+            rotateList(candidateMods, rotation);
+            ui.updateLists(candidateMods, workingMods);
+            ui.updateProgress(iterations, maxIterations);
+            int candidatesSize = candidateMods.size();
+            while (testingMods.size() < candidatesSize / 2) {
+                // Add the mod to the testing set, remove it from the candidate set
+                Mod mod = candidateMods.removeFirst();
+                testingMods.add(mod);
+                Main.log("Added mod " + mod.name());
+                addDeps(mod);
+            }
+            if (!candidateMods.isEmpty()) {
+                choseMods = true;
+                break;
+            }
+            Main.log("Unhelpful search set, rotating");
+            candidateMods.addAll(testingMods);
+            testingMods.clear();
+            testingDependencies.clear();
+            rotation++;
         }
+        if (!choseMods) {
+            iterations++;
+            finished = true;
+            ui.updateLists(candidateMods, workingMods);
+            ui.updateProgress(iterations, maxIterations);
+            ui.onFinished(candidateMods);
+            enableAll(mods);
+            return;
+        }
+
         for (Mod mod : forceEnabled) {
             enableMod(mod);
             Main.log("Added force-enabled mod " + mod.name());
@@ -196,6 +220,12 @@ public class SearchHandler {
         ui.sendInstructions("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
         ui.onBisectFinished();
         Main.log("Bottom of bisect");
+    }
+
+    private static <T> void rotateList(ArrayList<T> list, int rotation) {
+        for (int i = 0; i < rotation; i++) {
+            list.addLast(list.removeFirst());
+        }
     }
 
     private void disableAll(ArrayList<Mod> mods) {

@@ -167,10 +167,19 @@ public class SearchGui extends JFrame implements SearchUi {
     }
 
     @Override
-    public void onFinished(Mod problematicMod) {
-        JOptionPane.showMessageDialog(this, "Finished! The problematic mod is " + problematicMod.name() + ".");
+    public void onFinished(ArrayList<Mod> problematicMods) {
         failureButton.setEnabled(false);
         successButton.setEnabled(false);
+        if (problematicMods.size() == 1) {
+            JOptionPane.showMessageDialog(this, "Finished! The problematic mod is " + problematicMods.getFirst().name() + ".");
+        } else {
+            StringBuilder message = new StringBuilder("Finished! The problem is one of these mods, which all rely on each other:");
+            for (Mod problematicMod : problematicMods) {
+                message.append('\n');
+                message.append(problematicMod.name());
+            }
+            JOptionPane.showMessageDialog(this, message);
+        }
     }
 
     @Override
