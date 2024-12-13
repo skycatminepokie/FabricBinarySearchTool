@@ -326,12 +326,12 @@ public class SearchHandler {
 
             // Ids
             Main.log("Getting ids...");
-            String id = fmjJson.get("id").getAsString();
+            String mainId = fmjJson.get("id").getAsString();
             if (name == null) {
-                name = id;
+                name = mainId;
             }
             Set<String> ids = new HashSet<>();
-            ids.add(id);
+            ids.add(mainId);
             JsonElement provides = fmjJson.get("provides");
             if (provides != null) {
                 provides.getAsJsonArray().forEach((element) -> ids.add(element.getAsString()));
@@ -381,7 +381,7 @@ public class SearchHandler {
              */
             dependencies.removeAll(ids);
 
-            return new Mod(name, ids, dependencies, fileName.substring(0, extensionIndex));
+            return new Mod(name, mainId, ids, dependencies, fileName.substring(0, extensionIndex));
         }
     }
 }
