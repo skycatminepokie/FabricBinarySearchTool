@@ -56,7 +56,6 @@ public class CliUi implements SearchUi {
     public void onFinished(Mod problematicMod) {
         assert searchHandler != null : "searchHandler should be the one calling, why is it null?";
         System.out.printf("Finished! The problematic mod was: %s (%s)%n", problematicMod.name(), problematicMod.filename());
-        searchHandler.onUiClosing();
     }
 
     @Override

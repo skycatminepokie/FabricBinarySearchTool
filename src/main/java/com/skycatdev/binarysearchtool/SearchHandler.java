@@ -44,6 +44,7 @@ public class SearchHandler {
     private int maxIterations = 0;
     private int iterations = 0;
     private boolean finished = false;
+    private boolean madeShutdownHook = false;
     private static final Option[] DO_NOTHING_OPTION = {new Option("OK", null)};
 
     private SearchHandler(Path modsPath, SearchUi ui) {
@@ -64,7 +65,19 @@ public class SearchHandler {
         SearchHandler searchHandler = new SearchHandler(inputPath, ui);
         searchHandler.discoverMods();
         ui.initialize(searchHandler);
+        searchHandler.addShutdownHook();
         return searchHandler;
+    }
+
+    private void addShutdownHook() {
+        if (!madeShutdownHook) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (!finished) {
+                    mods.forEach((mod) -> mod.tryEnable(modsPath));
+                }
+            }));
+            madeShutdownHook = true;
+        }
     }
 
     private void addDeps(Mod mod) {
@@ -147,9 +160,11 @@ public class SearchHandler {
         // Ready for next step
         if (candidateMods.size() == 1) {
             iterations++;
+            finished = true;
             ui.updateLists(candidateMods, workingMods);
             ui.updateProgress(iterations, maxIterations);
             ui.onFinished(candidateMods.getFirst());
+            enableAll(mods);
             return;
         } else {
             if (candidateMods.isEmpty()) {
@@ -265,7 +280,7 @@ public class SearchHandler {
         }
     }
 
-    public boolean forceEnable(Mod mod) {
+    public boolean addForceEnabled(Mod mod) {
         if (forceEnabled.contains(mod)) {
             return false;
         }
@@ -288,20 +303,6 @@ public class SearchHandler {
             mod.tryEnable(modsPath);
         });
         System.exit(1);
-    }
-
-    private void onFinished() {
-        mods.forEach(this::enableMod);
-        finished = true;
-    }
-
-    /**
-     * Used for making sure all mods are enabled before closing the program.
-     */
-    public void onUiClosing() {
-        if (!finished) {
-            enableAll(mods);
-        }
     }
 
     private @Nullable Mod parseMod(JarFile jarFile) throws IOException {

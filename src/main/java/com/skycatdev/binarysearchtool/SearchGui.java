@@ -1,15 +1,12 @@
 package com.skycatdev.binarysearchtool;
 
 import com.skycatdev.binarysearchtool.advanced.OptionsPane;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -36,7 +33,7 @@ public class SearchGui extends JFrame implements SearchUi {
      */
     public SearchGui() {
         setTitle("Skycat's Fabric Binary Search Tool");
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 800, 500);
         mainPanel = new JPanel();
         mainPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -135,7 +132,6 @@ public class SearchGui extends JFrame implements SearchUi {
         startButton.addActionListener((event) -> start());
         topPanel.add(startButton);
 
-        addWindowListener(createWindowListener());
         setVisible(true);
 
         Main.log("Initialized");
@@ -263,47 +259,5 @@ public class SearchGui extends JFrame implements SearchUi {
         }.execute();
         failureButton.setEnabled(false);
         successButton.setEnabled(false);
-    }
-
-    private WindowListener createWindowListener() {
-        return new WindowListener() {
-            @Override
-            public void windowActivated(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowClosed(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowClosing(WindowEvent e) {
-                if (searchHandler != null) {
-                    searchHandler.onUiClosing();
-                }
-                System.exit(0);
-            }
-
-            @Override
-            public void windowDeactivated(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowDeiconified(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowIconified(WindowEvent e) {
-
-            }
-
-            @Override
-            public void windowOpened(WindowEvent e) {
-
-            }
-        };
     }
 }

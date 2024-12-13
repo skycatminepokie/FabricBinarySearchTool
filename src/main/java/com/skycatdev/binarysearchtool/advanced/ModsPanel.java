@@ -34,7 +34,7 @@ public class ModsPanel extends JPanel {
     }
 
     private void onForceEnablePressed(ActionEvent actionEvent) {
-        searchHandler.forceEnable(modSelectionBox.getItemAt(modSelectionBox.getSelectedIndex()));
+        searchHandler.addForceEnabled(modSelectionBox.getItemAt(modSelectionBox.getSelectedIndex()));
         JOptionPane.showMessageDialog(this, "Mod force enabled!");
     }
 }
