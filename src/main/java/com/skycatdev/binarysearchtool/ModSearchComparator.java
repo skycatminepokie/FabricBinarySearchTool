@@ -21,6 +21,6 @@ public class ModSearchComparator implements Comparator<Mod> {
         if (fileCompare != 0) {
             return fileCompare;
         }
-        throw new AssertionError("We compared main ids, name, filename, ids, and deps, and they are all equal, but equals was wrong or smth???");
+        throw new AssertionError("We compared main ids, name, filename, ids, and deps, and they are all equal, but they weren't the same??? I give up.");
     }
 }
