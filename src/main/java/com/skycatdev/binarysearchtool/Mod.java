@@ -30,6 +30,18 @@ public record Mod(String name, String mainId, Set<String> ids, Set<String> depen
         this.filename = filename;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Mod otherMod) {
+            return name.equals(otherMod.name) &&
+                   mainId.equals(otherMod.mainId) &&
+                   ids.equals(otherMod.ids) &&
+                   dependencies.equals(otherMod.dependencies) &&
+                   filename.equals(otherMod.filename);
+        }
+        return false;
+    }
+
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean tryDisable(Path modFolder) {
         File disabledMod = modFolder.resolve(filename + ".jar.disabled").toFile();
