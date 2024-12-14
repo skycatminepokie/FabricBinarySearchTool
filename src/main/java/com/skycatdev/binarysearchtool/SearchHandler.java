@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -41,6 +40,7 @@ public class SearchHandler {
     private final ArrayList<Mod> forceEnabled = new ArrayList<>();
     private final Path modsPath;
     private final SearchUi ui;
+    private final ModSearchComparator modComparator = new ModSearchComparator();
     private int maxIterations = 0;
     private int iterations = 0;
     private boolean finished = false;
@@ -177,7 +177,7 @@ public class SearchHandler {
         int rotation = 0;
         boolean choseMods = false;
         while (rotation < candidateMods.size()) {
-            candidateMods.sort(Comparator.comparing((mod) -> mod.dependencies().size()));
+            candidateMods.sort(modComparator);
             rotateList(candidateMods, rotation);
             ui.updateLists(candidateMods, workingMods);
             ui.updateProgress(iterations, maxIterations);
