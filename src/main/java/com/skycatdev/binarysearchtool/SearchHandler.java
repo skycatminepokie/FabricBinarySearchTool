@@ -17,6 +17,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class SearchHandler {
+    private static final Option[] DO_NOTHING_OPTION = {new Option("OK", null)};
     /**
      * A list of all mods from the beginning
      */
@@ -45,7 +46,6 @@ public class SearchHandler {
     private int iterations = 0;
     private boolean finished = false;
     private boolean madeShutdownHook = false;
-    private static final Option[] DO_NOTHING_OPTION = {new Option("OK", null)};
 
     private SearchHandler(Path modsPath, SearchUi ui) {
         this.modsPath = modsPath;
@@ -53,12 +53,11 @@ public class SearchHandler {
     }
 
     /**
-     *
      * @param inputPath A validated path to the mods folder.
-     * @param ui The frontend ui to use.
+     * @param ui        The frontend ui to use.
      * @return A new {@link SearchHandler}.
      * @throws IllegalArgumentException If the file at {@code inputPath} does not exist.
-     * @throws NotDirectoryException If the file at {@code inputPath} is not a directory.
+     * @throws NotDirectoryException    If the file at {@code inputPath} is not a directory.
      * @implSpec {@link SearchUi#initialize(SearchHandler)} has NOT been called.
      */
     public static SearchHandler createWithUi(Path inputPath, SearchUi ui) throws IllegalArgumentException, NotDirectoryException {
@@ -69,14 +68,9 @@ public class SearchHandler {
         return searchHandler;
     }
 
-    private void addShutdownHook() {
-        if (!madeShutdownHook) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                if (!finished) {
-                    mods.forEach((mod) -> mod.tryEnable(modsPath));
-                }
-            }));
-            madeShutdownHook = true;
+    private static <T> void rotateList(ArrayList<T> list, int rotation) {
+        for (int i = 0; i < rotation; i++) {
+            list.addLast(list.removeFirst());
         }
     }
 
@@ -117,14 +111,14 @@ public class SearchHandler {
                     Main.log("Mod gone wot");
                     ui.asyncDisplayOption("Mod gone wot",
                             "I did an oops, it should be in either testingMods, candidateMods, or working mods.\n" +
-                            "Please report this, unless you messed with files. In that case, have an angry face >:(", 
-                            MessageType.ERROR, 
+                            "Please report this, unless you messed with files. In that case, have an angry face >:(",
+                            MessageType.ERROR,
                             new Option[]{
-                                    new Option("I got an angry face", this::onFatalError), 
+                                    new Option("I got an angry face", this::onFatalError),
                                     new Option("I didn't get an angry face", this::onFatalError)});
                 } else {
                     // TODO: This doesn't account for dependency overrides
-                    ui.asyncDisplayOption("Missing dependency", 
+                    ui.asyncDisplayOption("Missing dependency",
                             "You seem to be missing a dependency - %s. Fabric should've told you this (or you're using dependency overrides). If I'm wrong, report this.".formatted(dependency),
                             MessageType.WARNING,
                             DO_NOTHING_OPTION
@@ -132,6 +126,27 @@ public class SearchHandler {
                     Main.log("Missing a dependency");
                 }
             }
+        }
+    }
+
+    public boolean addForceEnabled(Mod mod) {
+        if (forceEnabled.contains(mod)) {
+            return false;
+        }
+        forceEnabled.add(mod);
+        workingMods.add(mod);
+        candidateMods.remove(mod);
+        return true;
+    }
+
+    private void addShutdownHook() {
+        if (!madeShutdownHook) {
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (!finished) {
+                    mods.forEach((mod) -> mod.tryEnable(modsPath));
+                }
+            }));
+            madeShutdownHook = true;
         }
     }
 
@@ -168,7 +183,7 @@ public class SearchHandler {
             return;
         } else {
             if (candidateMods.isEmpty()) {
-                ui.asyncDisplayOption("Uh-oh!", "Oops! There's no candidate mods. Get help using the help button in the main window.", MessageType.ERROR, new Option[] {new Option("OK", this::onFatalError)});
+                ui.asyncDisplayOption("Uh-oh!", "Oops! There's no candidate mods. Get help using the help button in the main window.", MessageType.ERROR, new Option[]{new Option("OK", this::onFatalError)});
                 return;
             }
         }
@@ -222,12 +237,6 @@ public class SearchHandler {
         Main.log("Bottom of bisect");
     }
 
-    private static <T> void rotateList(ArrayList<T> list, int rotation) {
-        for (int i = 0; i < rotation; i++) {
-            list.addLast(list.removeFirst());
-        }
-    }
-
     private void disableAll(ArrayList<Mod> mods) {
         for (Mod testingMod : mods) {
             disableMod(testingMod);
@@ -243,7 +252,7 @@ public class SearchHandler {
                         new Option("Try again", () -> disableMod(mod))
                 }).get();
             } catch (ExecutionException | InterruptedException e) {
-                ui.asyncDisplayOption("Uh-oh", "Failed to disable gracefully", MessageType.ERROR, new Option[] {new Option("OK, cya", this::onFatalError)});
+                ui.asyncDisplayOption("Uh-oh", "Failed to disable gracefully", MessageType.ERROR, new Option[]{new Option("OK, cya", this::onFatalError)});
             }
         }
     }
@@ -305,19 +314,9 @@ public class SearchHandler {
                         new Option("Try again", () -> enableMod(mod))
                 }).get();
             } catch (ExecutionException | InterruptedException e) {
-                ui.asyncDisplayOption("Uh-oh", "Failed to enable gracefully", MessageType.ERROR, new Option[] {new Option("OK, cya", this::onFatalError)});
+                ui.asyncDisplayOption("Uh-oh", "Failed to enable gracefully", MessageType.ERROR, new Option[]{new Option("OK, cya", this::onFatalError)});
             }
         }
-    }
-
-    public boolean addForceEnabled(Mod mod) {
-        if (forceEnabled.contains(mod)) {
-            return false;
-        }
-        forceEnabled.add(mod);
-        workingMods.add(mod);
-        candidateMods.remove(mod);
-        return true;
     }
 
     public ArrayList<Mod> getMods() {

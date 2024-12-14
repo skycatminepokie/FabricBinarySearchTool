@@ -1,6 +1,5 @@
 package com.skycatdev.binarysearchtool.advanced;
 
-import com.skycatdev.binarysearchtool.SearchGui;
 import com.skycatdev.binarysearchtool.SearchHandler;
 
 import javax.swing.*;
@@ -8,6 +7,7 @@ import java.awt.*;
 
 public class OptionsPane extends JTabbedPane {
     protected final SearchHandler searchHandler;
+
     public OptionsPane(SearchHandler searchHandler) {
         super();
         this.searchHandler = searchHandler;

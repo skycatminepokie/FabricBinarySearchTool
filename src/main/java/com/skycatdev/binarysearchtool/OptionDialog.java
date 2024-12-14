@@ -9,6 +9,7 @@ import java.util.concurrent.FutureTask;
 
 public class OptionDialog extends JDialog {
     @Nullable Option chosenOption = null;
+
     public OptionDialog(Frame owner, String title, String text, Option[] options, FutureTask<Void> future) {
         super(owner, true);
         setLayout(new BorderLayout());

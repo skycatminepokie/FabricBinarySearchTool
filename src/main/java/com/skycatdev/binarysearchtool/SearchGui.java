@@ -137,20 +137,6 @@ public class SearchGui extends JFrame implements SearchUi {
         Main.log("Initialized");
     }
 
-    private void openAdvancedDialog(ActionEvent event) {
-        if (searchHandler != null) {
-            JDialog dialog = new JDialog(SearchGui.this, true);
-            dialog.setTitle("Advanced options");
-            dialog.setLayout(new BorderLayout());
-            OptionsPane advancedOptionsPane = new OptionsPane(searchHandler);
-            dialog.add(advancedOptionsPane, BorderLayout.CENTER);
-            dialog.pack();
-            dialog.setVisible(true);
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        }
-    }
-
-
     @Override
     public Future<Void> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options) {
         FutureTask<Void> future = new FutureTask<>(() -> (null));
@@ -162,8 +148,34 @@ public class SearchGui extends JFrame implements SearchUi {
     }
 
     @Override
+    public void failure() {
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                if (getSearchHandler() != null) {
+                    getSearchHandler().bisect(false);
+                }
+                return null;
+            }
+        }.execute();
+        failureButton.setEnabled(false);
+        successButton.setEnabled(false);
+    }
+
+    @Override
     public @Nullable SearchHandler getSearchHandler() {
         return searchHandler;
+    }
+
+    @Override
+    public void initialize(@Nullable SearchHandler searchHandler) {
+        this.searchHandler = searchHandler;
+    }
+
+    @Override
+    public void onBisectFinished() {
+        successButton.setEnabled(true);
+        failureButton.setEnabled(true);
     }
 
     @Override
@@ -182,44 +194,22 @@ public class SearchGui extends JFrame implements SearchUi {
         }
     }
 
-    @Override
-    public void initialize(@Nullable SearchHandler searchHandler) {
-        this.searchHandler = searchHandler;
-    }
-
-    @Override
-    public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
-        Main.log("Updating lists");
-        StringBuilder maybeProblem = new StringBuilder("Might be the problem:\n");
-        for (Mod candidate : candidateMods) {
-            maybeProblem.append(candidate.name());
-            maybeProblem.append('\n');
+    private void openAdvancedDialog(ActionEvent event) {
+        if (searchHandler != null) {
+            JDialog dialog = new JDialog(SearchGui.this, true);
+            dialog.setTitle("Advanced options");
+            dialog.setLayout(new BorderLayout());
+            OptionsPane advancedOptionsPane = new OptionsPane(searchHandler);
+            dialog.add(advancedOptionsPane, BorderLayout.CENTER);
+            dialog.pack();
+            dialog.setVisible(true);
+            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         }
-        maybeProblemPane.setText(maybeProblem.toString());
-        StringBuilder notProblem = new StringBuilder("Not the problem:\n");
-        for (Mod candidate : workingMods) {
-            notProblem.append(candidate.name());
-            notProblem.append('\n');
-        }
-        notProblemPane.setText(notProblem.toString());
-    }
-
-    @Override
-    public void updateProgress(int finished, int max) {
-        Main.log("Updating progress");
-        progressBar.setMaximum(max);
-        progressBar.setValue(finished);
     }
 
     @Override
     public void sendInstructions(String instructions) {
         SwingUtilities.invokeLater(() -> instructionsArea.setText(instructions));
-    }
-
-    @Override
-    public void onBisectFinished() {
-        successButton.setEnabled(true);
-        failureButton.setEnabled(true);
     }
 
     @Override
@@ -256,17 +246,26 @@ public class SearchGui extends JFrame implements SearchUi {
     }
 
     @Override
-    public void failure() {
-        new SwingWorker<Void, Void>() {
-            @Override
-            protected Void doInBackground() {
-                if (getSearchHandler() != null) {
-                    getSearchHandler().bisect(false);
-                }
-                return null;
-            }
-        }.execute();
-        failureButton.setEnabled(false);
-        successButton.setEnabled(false);
+    public void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods) {
+        Main.log("Updating lists");
+        StringBuilder maybeProblem = new StringBuilder("Might be the problem:\n");
+        for (Mod candidate : candidateMods) {
+            maybeProblem.append(candidate.name());
+            maybeProblem.append('\n');
+        }
+        maybeProblemPane.setText(maybeProblem.toString());
+        StringBuilder notProblem = new StringBuilder("Not the problem:\n");
+        for (Mod candidate : workingMods) {
+            notProblem.append(candidate.name());
+            notProblem.append('\n');
+        }
+        notProblemPane.setText(notProblem.toString());
+    }
+
+    @Override
+    public void updateProgress(int finished, int max) {
+        Main.log("Updating progress");
+        progressBar.setMaximum(max);
+        progressBar.setValue(finished);
     }
 }

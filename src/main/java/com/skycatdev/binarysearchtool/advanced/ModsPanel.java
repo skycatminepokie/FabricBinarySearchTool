@@ -10,7 +10,6 @@ import java.awt.event.ActionEvent;
 public class ModsPanel extends JPanel {
     protected final SearchHandler searchHandler;
     private final JComboBox<Mod> modSelectionBox;
-    private int nextRow;
 
     public ModsPanel(SearchHandler searchHandler) {
         super();
@@ -29,7 +28,6 @@ public class ModsPanel extends JPanel {
         addButtonConstraints.gridx = 1;
         addButtonConstraints.gridy = 0;
         add(addButton, addButtonConstraints);
-        nextRow = 2;
 
     }
 
