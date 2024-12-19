@@ -257,8 +257,9 @@ public class SearchHandler {
         }
     }
 
-    public void discoverMods() {
+    private void discoverMods() {
         // If something here goes wrong, the user should end up being forced to quit.
+        Mod.loadDependencyOverrides(modsPath.getParent().resolve("config").resolve("fabric_loader_dependencies.json").toFile());
         Main.log("Discovering mods");
         // modsPath is initialized
         // populate mods
