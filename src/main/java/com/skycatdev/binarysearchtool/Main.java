@@ -2,7 +2,6 @@ package com.skycatdev.binarysearchtool;
 
 import javax.swing.*;
 import java.io.File;
-import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 
 public class Main {
@@ -46,14 +45,14 @@ public class Main {
                     SearchGui gui = new SearchGui();
                     SearchHandler.createWithUi(modsPath, gui);
                     gui.setVisible(true);
-                } catch (NotDirectoryException | IllegalArgumentException e) {
+                } catch (IllegalArgumentException e) {
                     throw new RuntimeException("The directory should've been validated by now.", e);
                 }
             });
         } else {
             try {
                 SearchHandler.createWithUi(modsPath, new CliUi());
-            } catch (NotDirectoryException | IllegalArgumentException e) {
+            } catch (IllegalArgumentException e) {
                 throw new RuntimeException("The directory should've been validated by now.", e);
             }
         }

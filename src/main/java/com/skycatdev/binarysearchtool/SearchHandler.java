@@ -73,7 +73,7 @@ public class SearchHandler {
 
     private static <T> void rotateList(ArrayList<T> list, int rotation) {
         for (int i = 0; i < rotation; i++) {
-            list.addLast(list.removeFirst());
+            list.add(list.remove(0));
         }
     }
 
@@ -202,7 +202,7 @@ public class SearchHandler {
             int candidatesSize = candidateMods.size();
             while (testingMods.size() < candidatesSize / 2) {
                 // Add the mod to the testing set, remove it from the candidate set
-                Mod mod = candidateMods.removeFirst();
+                Mod mod = candidateMods.remove(0);
                 testingMods.add(mod);
                 Main.log("Added mod " + mod.name());
                 addDeps(mod);

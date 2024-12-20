@@ -95,7 +95,7 @@ public class CliUi implements SearchUi {
     public void onFinished(ArrayList<Mod> problematicMods) {
         assert searchHandler != null : "searchHandler should be the one calling, why is it null?";
         if (problematicMods.size() == 1) {
-            System.out.printf("Finished! The problematic mod was: %s (%s)%n", problematicMods.getFirst().name(), problematicMods.getFirst().filename());
+            System.out.printf("Finished! The problematic mod was: %s (%s)%n", problematicMods.get(0).name(), problematicMods.get(0).filename());
         } else {
             System.out.println("Finished! The following mods rely on each other, and one is the problem:");
             for (Mod problematicMod : problematicMods) {
