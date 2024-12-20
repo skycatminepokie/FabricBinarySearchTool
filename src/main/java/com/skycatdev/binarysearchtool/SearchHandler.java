@@ -9,6 +9,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -40,7 +41,10 @@ public class SearchHandler {
     private final ArrayList<Mod> forceEnabled = new ArrayList<>();
     private final Path modsPath;
     private final SearchUi ui;
-    private final ModSearchComparator modComparator = new ModSearchComparator();
+    private final Comparator<Mod> modComparator = Comparator.<Mod>comparingInt((mod) -> mod.dependencies().size())
+            .thenComparing(Mod::mainId, String::compareTo)
+            .thenComparing(Mod::name, String::compareTo)
+            .thenComparing(Mod::filename, String::compareTo);
     private int maxIterations = 0;
     private int iterations = 0;
     private boolean finished = false;

@@ -34,26 +34,36 @@ public class CliUi implements SearchUi {
     }
 
     private void blockingDisplayOption(String text, Option[] options) {
-        System.out.println(text); // TODO allow shorthand
-        for (Option option : options) {
-            System.out.println(option.name());
+        System.out.println(text);
+        for (int i = 0; i < options.length; i++) {
+            Option option = options[i];
+            System.out.println(option.name() + " [" + (i + 1) + "]");
         }
         Option chosen = null;
         while (chosen == null) {
-            String choice;
-            choice = scanner.nextLine();
+            String input = scanner.nextLine();
+            int optionNumber = -1;
+            try {
+                optionNumber = Integer.parseInt(input);
+            } catch (NumberFormatException ignored) {
+
+            }
+            if (optionNumber > 0 && optionNumber <= options.length) {
+                chosen = options[optionNumber - 1];
+                break;
+            }
             for (Option option : options) {
-                if (option.name().equals(choice)) {
+                if (option.name().equals(input)) {
                     chosen = option;
-                    if (option.callback() != null) {
-                        option.callback().run();
-                    }
                     break;
                 }
             }
             if (chosen == null) {
                 System.out.println("That was not an option!");
             }
+        }
+        if (chosen.callback() != null) {
+            chosen.callback().run();
         }
     }
 
@@ -78,7 +88,7 @@ public class CliUi implements SearchUi {
 
     @Override
     public void onBisectFinished() {
-        new Thread(() -> blockingDisplayOption("Is the problem fixed?", new Option[]{new Option("Yes", this::success), new Option("No", this::failure)})).start();
+        asyncDisplayOption("", "Is the problem fixed?", MessageType.NONE, new Option[]{new Option("Yes", this::success), new Option("No", this::failure)});
     }
 
     @Override
