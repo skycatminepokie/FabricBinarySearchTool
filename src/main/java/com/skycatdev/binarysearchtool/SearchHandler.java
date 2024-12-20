@@ -356,6 +356,18 @@ public class SearchHandler {
         System.exit(1);
     }
 
+    public ArrayList<Mod> getWorkingMods() {
+        return workingMods;
+    }
+
+    public ArrayList<Mod> getTestingMods() {
+        return testingMods;
+    }
+
+    public ArrayList<Mod> getCandidateMods() {
+        return candidateMods;
+    }
+
     private @Nullable Mod parseMod(JarFile jarFile) throws IOException {
         Main.log("Parsing mod");
         JarEntry fmj = jarFile.getJarEntry("fabric.mod.json");
