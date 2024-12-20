@@ -88,7 +88,7 @@ public class CliUi implements SearchUi {
 
     @Override
     public void onBisectFinished() {
-        new Thread(() -> blockingDisplayOption("Is the problem fixed?", new Option[]{new Option("Yes", this::success), new Option("No", this::failure)})).start();
+        asyncDisplayOption("", "Is the problem fixed?", MessageType.NONE, new Option[]{new Option("Yes", this::success), new Option("No", this::failure)});
     }
 
     @Override
