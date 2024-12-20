@@ -121,7 +121,7 @@ public class SearchHandler {
                                     new Option("I didn't get an angry face", this::onFatalError)});
                 } else {
                     ui.asyncDisplayOption("Missing dependency",
-                            "You seem to be missing a dependency - %s. Fabric should've told you this (or you're using dependency overrides). If I'm wrong, report this.".formatted(dependency),
+                            "You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency),
                             MessageType.WARNING,
                             DO_NOTHING_OPTION
                     );
