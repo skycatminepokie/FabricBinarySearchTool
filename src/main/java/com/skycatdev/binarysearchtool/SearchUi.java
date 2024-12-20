@@ -11,10 +11,12 @@ public interface SearchUi {
      * @return A future that completes when the option is chosen. Maybe a funny way of doing things, but oh well.
      * @implSpec Must block other ui actions. Must not block the thread it is called on.
      */
-    Future<Void> asyncDisplayOption(String title, String text, MessageType messageType, Option[] options);
+    Future<Void> asyncDisplayOption(String title, String text, @SuppressWarnings("unused") MessageType messageType, Option[] options);
 
+    @SuppressWarnings("unused")
     void failure();
 
+    @SuppressWarnings("unused")
     SearchHandler getSearchHandler();
 
     void initialize(SearchHandler searchHandler);
@@ -29,23 +31,25 @@ public interface SearchUi {
 
     void sendInstructions(String instructions);
 
+    @SuppressWarnings("unused")
     void start();
 
+    @SuppressWarnings("unused")
     void success();
 
     /**
      * Update the display of the mod lists. Blocking.
      *
-     * @param candidateMods
-     * @param workingMods
+     * @param candidateMods Mods that may be the problem.
+     * @param workingMods Mods that are not the problem.
      */
     void updateLists(ArrayList<Mod> candidateMods, ArrayList<Mod> workingMods);
 
     /**
      * Update the progress of searching. Blocking.
      *
-     * @param iterations
-     * @param maxIterations
+     * @param iterations The number of times bisected.
+     * @param maxIterations The max number of times it should take to bisect.
      */
     void updateProgress(int iterations, int maxIterations);
 }

@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -57,10 +56,10 @@ public class SearchHandler {
      * @param ui        The frontend ui to use.
      * @return A new {@link SearchHandler}.
      * @throws IllegalArgumentException If the file at {@code inputPath} does not exist.
-     * @throws NotDirectoryException    If the file at {@code inputPath} is not a directory.
      * @implSpec {@link SearchUi#initialize(SearchHandler)} has NOT been called.
      */
-    public static SearchHandler createWithUi(Path inputPath, SearchUi ui) throws IllegalArgumentException, NotDirectoryException {
+    @SuppressWarnings("UnusedReturnValue")
+    public static SearchHandler createWithUi(Path inputPath, SearchUi ui) throws IllegalArgumentException {
         SearchHandler searchHandler = new SearchHandler(inputPath, ui);
         searchHandler.discoverMods();
         ui.initialize(searchHandler);
@@ -117,7 +116,6 @@ public class SearchHandler {
                                     new Option("I got an angry face", this::onFatalError),
                                     new Option("I didn't get an angry face", this::onFatalError)});
                 } else {
-                    // TODO: This doesn't account for dependency overrides
                     ui.asyncDisplayOption("Missing dependency",
                             "You seem to be missing a dependency - %s. Fabric should've told you this (or you're using dependency overrides). If I'm wrong, report this.".formatted(dependency),
                             MessageType.WARNING,
@@ -129,6 +127,7 @@ public class SearchHandler {
         }
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public boolean addForceEnabled(Mod mod) {
         if (forceEnabled.contains(mod)) {
             return false;

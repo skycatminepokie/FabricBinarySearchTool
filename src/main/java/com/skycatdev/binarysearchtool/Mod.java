@@ -87,6 +87,7 @@ public record Mod(String name, String mainId, Set<String> ids, Set<String> depen
 
     @Override
     public boolean equals(Object obj) {
+        //noinspection DeconstructionCanBeUsed
         if (obj instanceof Mod otherMod) {
             return name.equals(otherMod.name) &&
                    mainId.equals(otherMod.mainId) &&

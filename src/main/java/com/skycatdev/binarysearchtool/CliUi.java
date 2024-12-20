@@ -16,7 +16,7 @@ public class CliUi implements SearchUi {
      * The SearchHandler this is linked to. Is null if none is linked.
      */
     protected @Nullable SearchHandler searchHandler = null;
-    protected Scanner scanner = new Scanner(System.in);
+    protected final Scanner scanner = new Scanner(System.in);
 
     public CliUi() {
     }
@@ -66,7 +66,7 @@ public class CliUi implements SearchUi {
     }
 
     @Override
-    public SearchHandler getSearchHandler() {
+    public @Nullable SearchHandler getSearchHandler() {
         return searchHandler;
     }
 

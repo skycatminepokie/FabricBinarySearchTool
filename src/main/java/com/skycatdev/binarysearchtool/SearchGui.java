@@ -25,7 +25,7 @@ public class SearchGui extends JFrame implements SearchUi {
     public final JTextPane notProblemPane;
     public final JPanel topPanel;
     public final JButton startButton;
-    public JPanel mainPanel;
+    public final JPanel mainPanel;
     public @Nullable SearchHandler searchHandler = null;
 
     /**
@@ -194,7 +194,7 @@ public class SearchGui extends JFrame implements SearchUi {
         }
     }
 
-    private void openAdvancedDialog(ActionEvent event) {
+    private void openAdvancedDialog(ActionEvent ignored) {
         if (searchHandler != null) {
             JDialog dialog = new JDialog(SearchGui.this, true);
             dialog.setTitle("Advanced options");
