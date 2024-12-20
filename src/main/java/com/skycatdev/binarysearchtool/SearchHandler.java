@@ -41,7 +41,7 @@ public class SearchHandler {
     private final ArrayList<Mod> forceEnabled = new ArrayList<>();
     private final Path modsPath;
     private final SearchUi ui;
-    private final Comparator<Mod> modComparator = Comparator.<Mod>comparingInt((mod) -> mod.dependencies().size())
+    private final Comparator<Mod> modComparator = Comparator.<Mod>comparingInt((mod) -> -mod.dependencies().size())
             .thenComparing(Mod::mainId, String::compareTo)
             .thenComparing(Mod::name, String::compareTo)
             .thenComparing(Mod::filename, String::compareTo);
