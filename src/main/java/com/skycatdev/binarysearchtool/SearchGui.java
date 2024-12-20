@@ -213,6 +213,11 @@ public class SearchGui extends JFrame implements SearchUi {
     }
 
     @Override
+    public void sendNextStepInstructions() {
+        sendInstructions("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+    }
+
+    @Override
     public void start() {
         Main.log("Requested start searching");
         if (getSearchHandler() != null) {

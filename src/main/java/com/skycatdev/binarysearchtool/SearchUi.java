@@ -31,6 +31,8 @@ public interface SearchUi {
 
     void sendInstructions(String instructions);
 
+    void sendNextStepInstructions();
+
     @SuppressWarnings("unused")
     void start();
 

@@ -8,10 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -131,6 +128,20 @@ public class SearchHandler {
         }
     }
 
+    /**
+     * Try to force enable a mod by id.
+     * @param id The id of the mod to force enable.
+     * @return {@code false} if the mod was already force enabled or does not exist
+     */
+    public boolean forceEnable(String id) {
+        Optional<Mod> optMod = mods.stream().filter((mod) -> mod.mainId().equals(id)).findAny();
+        //noinspection OptionalIsPresent
+        if (optMod.isPresent()) {
+            return addForceEnabled(optMod.get());
+        }
+        return false;
+    }
+
     @SuppressWarnings("UnusedReturnValue")
     public boolean addForceEnabled(Mod mod) {
         if (forceEnabled.contains(mod)) {
@@ -235,7 +246,7 @@ public class SearchHandler {
         // Enable mods we're using
         enableAll(testingMods);
         enableAll(testingDependencies);
-        ui.sendInstructions("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). If the error is gone, press Success. If it's still there, press Failure.");
+        ui.sendNextStepInstructions();
         ui.onBisectFinished();
         Main.log("Bottom of bisect");
     }
@@ -337,7 +348,7 @@ public class SearchHandler {
     /**
      * Call after the error has been acknowledged by a button press.
      */
-    private void onFatalError() {
+    public void onFatalError() {
         mods.forEach((mod) -> {
             assert modsPath != null;
             mod.tryEnable(modsPath);

@@ -83,7 +83,36 @@ public class CliUi implements SearchUi {
     @Override
     public void initialize(SearchHandler searchHandler) {
         this.searchHandler = searchHandler;
-        asyncDisplayOption("", "Ready to start?", MessageType.NONE, new Option[]{new Option("start", this::start)});
+        displayStartMenu();
+    }
+
+    private void displayStartMenu() {
+        asyncDisplayOption("", "Ready to start?", MessageType.NONE, new Option[]{new Option("start", this::start), new Option("advanced", this::openAdvancedOptions)});
+    }
+
+    private void openAdvancedOptions() {
+        System.out.println("Advanced options");
+        System.out.println("Heh, the only thing we have is force-enabling mods. Type the id of the mod you'd like to force-enable, or \"back\" to go back");
+        String id = scanner.nextLine();
+        if (id.equals("back")) {
+            displayStartMenu();
+            return;
+        }
+        if (getSearchHandler() == null) {
+            asyncDisplayOption("", "SearchHandler was not initialized when opening advanced options. Please report this.", MessageType.NONE, new Option[]{new Option("OK", () -> System.exit(-1))});
+            return;
+        }
+        if (getSearchHandler().forceEnable(id)) {
+            System.out.println("Success!");
+        } else {
+            System.out.println("Could not force enable mod. Either it was already force-enabled, or it does not exist.");
+        }
+        openAdvancedOptions();
+    }
+
+    @Override
+    public void sendNextStepInstructions() {
+        sendInstructions("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). Then respond to the prompt.");
     }
 
     @Override
@@ -102,6 +131,7 @@ public class CliUi implements SearchUi {
                 System.out.printf("%s (%s)", problematicMod.name(), problematicMod.filename());
             }
         }
+        System.exit(0);
     }
 
     @Override
