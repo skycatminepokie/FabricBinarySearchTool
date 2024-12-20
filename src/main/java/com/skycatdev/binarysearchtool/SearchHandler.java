@@ -259,8 +259,15 @@ public class SearchHandler {
 
     private void discoverMods() {
         // If something here goes wrong, the user should end up being forced to quit.
-        Mod.loadDependencyOverrides(modsPath.getParent().resolve("config").resolve("fabric_loader_dependencies.json").toFile());
         Main.log("Discovering mods");
+        try {
+            Mod.loadDependencyOverrides(modsPath.getParent().resolve("config").resolve("fabric_loader_dependencies.json").toFile());
+        } catch (IOException e) {
+            Main.log("Failed to load dependency overrides.");
+            Main.log(e.getMessage());
+            ui.asyncDisplayOption("Dep override failure", "Could not load dependency overrides", MessageType.INFO, DO_NOTHING_OPTION);
+            return;
+        }
         // modsPath is initialized
         // populate mods
         File[] possibleModFiles;
