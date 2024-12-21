@@ -189,11 +189,11 @@ public class SearchHandler {
         // Ready for next step
         if (candidateMods.size() == 1) {
             iterations++;
+            enableAll(mods);
             finished = true;
             ui.updateLists(candidateMods, workingMods);
             ui.updateProgress(iterations, maxIterations);
             ui.onFinished(candidateMods);
-            enableAll(mods);
             return;
         } else {
             if (candidateMods.isEmpty()) {
@@ -259,11 +259,11 @@ public class SearchHandler {
 
     private void disableMod(Mod mod) {
         assert modsPath != null;
-        if (!mod.tryDisable(modsPath)) {
+        while (!mod.tryDisable(modsPath)) {
             try {
                 ui.asyncDisplayOption("Disable failed", "Couldn't disable \"%s\". Make sure Minecraft is closed.".formatted(mod.name()), MessageType.WARNING, new Option[]{
                         new Option("Abort", this::onFatalError),
-                        new Option("Try again", () -> disableMod(mod))
+                        new Option("Try again", null)
                 }).get();
             } catch (ExecutionException | InterruptedException e) {
                 ui.asyncDisplayOption("Uh-oh", "Failed to disable gracefully", MessageType.ERROR, new Option[]{new Option("OK, cya", this::onFatalError)});
@@ -329,11 +329,11 @@ public class SearchHandler {
 
     private void enableMod(Mod mod) {
         assert modsPath != null;
-        if (!mod.tryEnable(modsPath)) {
+        while (!mod.tryEnable(modsPath)) {
             try {
                 ui.asyncDisplayOption("Enable failed", "Couldn't enable \"%s\". Make sure Minecraft is closed.".formatted(mod.name()), MessageType.WARNING, new Option[]{
                         new Option("Abort", this::onFatalError),
-                        new Option("Try again", () -> enableMod(mod))
+                        new Option("Try again", null)
                 }).get();
             } catch (ExecutionException | InterruptedException e) {
                 ui.asyncDisplayOption("Uh-oh", "Failed to enable gracefully", MessageType.ERROR, new Option[]{new Option("OK, cya", this::onFatalError)});

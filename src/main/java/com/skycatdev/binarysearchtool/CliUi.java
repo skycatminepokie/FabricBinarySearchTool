@@ -4,8 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
-import java.util.Stack;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -94,38 +95,6 @@ public class CliUi implements SearchUi {
         showBisectMenu();
     }
 
-    private void showBisectMenu() {
-        asyncDisplayOption("", "Is the problem fixed?", MessageType.NONE, new Option[]{
-                new Option("Yes", this::success),
-                new Option("No", this::failure),
-                new Option("List", () -> {
-                    showLists();
-                    showBisectMenu();
-                })
-        });
-    }
-
-    private void showLists() {
-        if (getSearchHandler() == null) {
-            asyncDisplayOption("", "SearchHandler was null when trying to display lists. Please report this.", MessageType.ERROR, new Option[]{new Option("OK", null)});
-            return;
-        }
-        System.out.println("Might be the problem:");
-        for (Mod mod : getSearchHandler().getCandidateMods()){
-            System.out.println(mod.name());
-        }
-        System.out.println();
-        System.out.println("Not the problem:");
-        for (Mod mod: getSearchHandler().getWorkingMods()) {
-            System.out.println(mod.name());
-        }
-        System.out.println();
-        System.out.println("Mods we're testing now:");
-        for (Mod mod : getSearchHandler().getTestingMods()) {
-            System.out.println(mod.name());
-        }
-    }
-
     @Override
     public void onFinished(ArrayList<Mod> problematicMods) {
         assert searchHandler != null : "searchHandler should be the one calling, why is it null?";
@@ -168,6 +137,38 @@ public class CliUi implements SearchUi {
     @Override
     public void sendNextStepInstructions() {
         sendInstructions("Next step is ready! Launch Minecraft, test (or crash), then close it (or crash). Then respond to the prompt.");
+    }
+
+    private void showBisectMenu() {
+        asyncDisplayOption("", "Is the problem fixed?", MessageType.NONE, new Option[]{
+                new Option("Yes", this::success),
+                new Option("No", this::failure),
+                new Option("List", () -> {
+                    showLists();
+                    showBisectMenu();
+                })
+        });
+    }
+
+    private void showLists() {
+        if (getSearchHandler() == null) {
+            asyncDisplayOption("", "SearchHandler was null when trying to display lists. Please report this.", MessageType.ERROR, new Option[]{new Option("OK", null)});
+            return;
+        }
+        System.out.println("Might be the problem:");
+        for (Mod mod : getSearchHandler().getCandidateMods()) {
+            System.out.println(mod.name());
+        }
+        System.out.println();
+        System.out.println("Not the problem:");
+        for (Mod mod : getSearchHandler().getWorkingMods()) {
+            System.out.println(mod.name());
+        }
+        System.out.println();
+        System.out.println("Mods we're testing now:");
+        for (Mod mod : getSearchHandler().getTestingMods()) {
+            System.out.println(mod.name());
+        }
     }
 
     @Override
