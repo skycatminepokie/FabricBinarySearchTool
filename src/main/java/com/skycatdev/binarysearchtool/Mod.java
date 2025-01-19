@@ -27,10 +27,15 @@ public record Mod(String name, String mainId, Set<String> ids, Set<String> depen
      * Main id -> Full provides set
      */
     public static final HashMap<String, Set<String>> ID_OVERRIDES = new HashMap<>();
+    /**
+     * Main ID -> func(oldDeps, newDeps)
+     */
     public static final HashMap<String, Function<Set<String>, Set<String>>> DEPENDENCY_OVERRIDES = new HashMap<>();
+    public static final Set<String> IGNORED_DEPENDENCIES = new HashSet<>();
 
     static {
         ID_OVERRIDES.put("owo-sentinel", Set.of("owo-sentinel"));
+        IGNORED_DEPENDENCIES.add("mixinextras"); // Mods shouldn't be depending on this
     }
 
     public Mod(String name, String mainId, Set<String> ids, Set<String> dependencies, String filename) {
@@ -38,6 +43,7 @@ public record Mod(String name, String mainId, Set<String> ids, Set<String> depen
         this.mainId = mainId;
         this.ids = ID_OVERRIDES.getOrDefault(mainId, ids);
         this.dependencies = DEPENDENCY_OVERRIDES.getOrDefault(mainId, Function.identity()).apply(dependencies);
+        this.dependencies.removeAll(IGNORED_DEPENDENCIES);
         this.filename = filename;
     }
 

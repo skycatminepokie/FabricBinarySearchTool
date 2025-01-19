@@ -120,7 +120,7 @@ public class SearchHandler {
                     ui.asyncDisplayOption("Missing dependency",
                             "You seem to be missing a dependency - %s. Fabric should've told you this. If I'm wrong, report this.".formatted(dependency),
                             MessageType.WARNING,
-                            DO_NOTHING_OPTION
+                            new Option[]{new Option("OK", null), new Option("Abort", this::onFatalError)}
                     );
                     Main.log("Missing a dependency");
                 }
