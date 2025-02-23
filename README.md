@@ -28,12 +28,29 @@ mods, tell you what dependencies you're missing, or fix the mod. It's a good too
 give a conclusive answer.
 > Need help with reading logs? Try the [Fabric Discord server](https://discord.gg/v6v4pMv) in the #player-support 
 > channel.
+
+## Troubleshooting
+### It doesn't open!
+You probably don't have the right version of Java. You can verify this by opening up a terminal (Windows: Press 
+the Windows key + R, type `cmd` and hit enter) and running `java -version`. If the version is lower than `1.17.xxx`,
+you need to install Java 17 or later, then restart your computer.
+### It still doesn't open!
+Let's diagnose a litte further. Copy the path to where the jar is (Windows users, it'll probably be in 
+`C:\Users\You\Downloads\BinarySearchTool-x.y.z-all.jar`. Open a terminal and run the Jar: `java -jar path/to/tool/tool.jar` (Windows 
+users, it'll look like `java -jar C:\Users\You\Downloads\BinarySearchTool-x.y.z-all.jar`
+### "...this version of the Java Runtime only recognizes class file versions up to..."
+You need to install Java 17 or later, then restart your computer. If the installer asks, check the box that says
+"set JAVA_HOME environment variable" or something like that.
+### Some other problem
+Try the [Fabric Discord server](https://discord.gg/v6v4pMv). Ping `@skycatminepokie` if the tool is 
+broken or making no sense. If it's just your Minecraft, ask in the `#player-support` channel.
+
 ## What do I do if the tool breaks?
 Report it on the [Issues](https://github.com/skycatminepokie/FabricBinarySearchTool/issues) tab. I'll take a look and 
 see if it's in-scope to fix. If some of your mods are disabled, you can re-enable them by renaming the files to remove 
 the `.disabled` part at the end. Windows will warn you about it - it's safe to ignore. You can also enable them via 
 MultiMC (or another launcher probably). For immediate help, try the [Fabric Discord server](https://discord.gg/v6v4pMv). 
-Ping`@skycatminepokie` if the tool is broken. If it's just your Minecraft, ask in the #player-support channel.
+Ping `@skycatminepokie` if the tool is broken. If it's just your Minecraft, ask in the `#player-support` channel.
 ## Building from source
 1. Clone the repo
 2. Run `.\gradlew shadowJar`
