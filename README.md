@@ -4,6 +4,7 @@ This tool helps you binary search through your fabric mod list. This is useful w
 causing problems, but you can't figure out which one from logs. This will NOT work when there's more than one mod 
 causing the problem, when you're missing dependencies (including Minecraft or Java), or for non-fabric things.
 ## How to use
+0. Make sure you have Java 17+ installed. You may need to restart your computer.
 1. Download the application from the [Releases](https://github.com/skycatminepokie/FabricBinarySearchTool/releases/latest) 
 page.
 2. Double-click it to run it
