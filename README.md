@@ -1,3 +1,7 @@
+# This project is unmaintained.
+
+Try https://qendolin.github.io/mod-bisect-tool/ . (not affiliated, not liable, use at your own risk, all that stuff)
+
 # Skycat's Binary Search Tool
 ### Not a mod, don't put it in your mods folder!
 This tool helps you binary search through your fabric mod list. This is useful when you think there is one mod that is 
